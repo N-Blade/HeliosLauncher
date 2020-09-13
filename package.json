@@ -27,7 +27,7 @@
   "dependencies": {
     "adm-zip": "^0.4.14",
     "async": "^3.2.0",
-    "discord-rpc": "3.1.0",
+    "discord-rpc": "^3.1.4",
     "ejs": "^2.7.4",
     "ejs-electron": "^2.0.3",
     "electron-updater": "^4.2.5",

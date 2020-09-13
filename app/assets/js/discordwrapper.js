@@ -26,8 +26,8 @@ exports.initRPC = function (discordSettings) {
         state: discordSettings.guild,
         largeImageKey: discordSettings.largeImageKey,
         largeImageText: discordSettings.largeImageText,
-        smallImageKey: 'null',
-        smallImageText: 'null',
+        smallImageKey: discordSettings.smallImageKey,
+        smallImageText: discordSettings.smallImageText,
         startTimestamp: new Date().getTime(),
         instance: false
     }

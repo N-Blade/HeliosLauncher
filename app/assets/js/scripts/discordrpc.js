@@ -3,9 +3,9 @@ const validNickname = /^[а-яА-Я_]{1,10}$/
 //const validGuild = /^[а-яА-Яa-zA-z_]{1,17}$/
 
 const nicknameDiscordRPC = document.getElementById('nicknameDiscordRPC')
-const guildDiscordRPC = document.getElementById('guildDiscordRPC')
 const discordRPCButton = document.getElementById('discordRPCButton')
 const discordRPCForm = document.getElementById('discordRPCForm')
+const guildListDiscordRPC = document.getElementById('guildListDiscordRPC')
 
 const isValid = (value, regex) => {
     if (regex.test(value)) {
@@ -24,8 +24,9 @@ discordRPCButton.addEventListener('click', () => {
     if (isValid(nicknameDiscordRPC.value, validNickname)) {
         ConfigManager.updateDiscordNickname(current.uuid, nicknameDiscordRPC.value)
     }
-    ConfigManager.updateDiscordGuild(current.uuid, guildDiscordRPC.value)
+    let e = guildListDiscordRPC
+    let guildname = e.options[e.selectedIndex].text;
+    ConfigManager.updateDiscordGuild(current.uuid, guildname)
     ConfigManager.save()
 })
-
 

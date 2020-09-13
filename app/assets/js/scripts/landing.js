@@ -99,10 +99,22 @@ document
     if (true) return;
   });
 
+var guildList = ''
 // Bind settings button
-document.getElementById("settingsMediaButton").onclick = (e) => {
-  prepareSettings();
-  switchView(getCurrentView(), VIEWS.settings);
+document.getElementById("settingsMediaButton").onclick = async (e) => {
+  const guildListDiscordRPC = document.getElementById('guildListDiscordRPC')
+  if (guildList === '') {
+    guildList = await fetch('https://raw.githubusercontent.com/N-Blade/BladeLauncher/blade/app/assets/guilds.json');
+    guildList = await guildList.json();
+    console.log(guildList)
+    guildList.forEach(function (guild) {
+      let option = document.createElement('option');
+      option.innerHTML = guild.name;
+      guildListDiscordRPC.appendChild(option);
+    });
+  }
+  await prepareSettings();
+  await switchView(getCurrentView(), VIEWS.settings);
 };
 
 // Bind avatar overlay button.
@@ -614,18 +626,11 @@ function dlAsync(login = true) {
           // Init Discord Hook
           const distro = DistroManager.getDistribution();
           if (distro.discord != null && serv.discord != null) {
-
             let guildname = ConfigManager.getSelectedAccount().discordGuild
-            let guildimage = 'sealcircle_photos_v2_x4'
 
             const initDiscordRPC = async () => {
-              const response = await fetch('https://raw.githubusercontent.com/N-Blade/BladeLauncher/blade/app/assets/guilds.json');
-              const json = await response.json();
-              console.log(json);
-
-              json.forEach(function (guild) {
-                console.log(guild.name + " " + ConfigManager.getSelectedAccount().discordGuild.toLowerCase())
-                if (guild.name === ConfigManager.getSelectedAccount().discordGuild.toLowerCase()) {
+              guildList.forEach(function (guild) {
+                if (guild.name.toLowerCase() === ConfigManager.getSelectedAccount().discordGuild.toLowerCase()) {
                   guildimage = guild.image
                 }
               });
@@ -633,8 +638,10 @@ function dlAsync(login = true) {
               DiscordWrapper.initRPC({
                 nickname: ConfigManager.getSelectedAccount().discordNickname,
                 guild: ConfigManager.getSelectedAccount().discordGuild,
-                largeImageKey: guildimage,
-                largeImageText: guildname,
+                largeImageKey: 'nbladelogo',
+                largeImageText: 'Северный Клинок',
+                smallImageKey: guildimage,
+                smallImageText: guildname
               });
               hasRPC = true;
               pb.addCloseListener((code, signal) => {

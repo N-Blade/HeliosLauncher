@@ -4924,22 +4924,35 @@ input:checked + .toggleSwitchSlider:before {
     align-items: center;
 }
 
-/* Login text input styles. */
+/* DiscordRPC text input styles. */
 .discordRPCField {
     font-family: 'Avenir Book';
-    background: none;
+    background: rgba(0, 0, 0, 0.25);
     border-width: 1.5px 0px 0px 0px;
     border-style: solid;
-    /* width: 250px; */
     width: 75%;
     margin-bottom: 20px;
-    border-color: #fff;
-    color: rgba(255, 255, 255, 0.75);
+    color: #fff;
     font-weight: bold;
-    text-align: center;
     box-sizing: border-box;
     padding: 7.5px;
-    font-size: 10px;
+    font-size: 14px;
     letter-spacing: 1px;
 }
+
+.discordRPCGuildList {
+    font-family: 'Avenir Book';
+    background: rgba(0, 0, 0, 0.25);
+    border-width: 1.5px 0px 0px 0px;
+    border-style: solid;
+    width: 75%;
+    margin-bottom: 20px;
+    color: #fff;
+    font-weight: bold;
+    box-sizing: border-box;
+    padding: 7.5px;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+  
   

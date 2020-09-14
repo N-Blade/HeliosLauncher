@@ -1086,7 +1086,7 @@ class JavaGuard extends EventEmitter {
 }
 
 
-
+let oldVersionData = []
 
 /**
  * Central object class used for control flow. This object stores data about
@@ -1203,6 +1203,42 @@ class AssetGuard extends EventEmitter {
         return true
     }
 
+    async cleanupPreviousVersionData(oldVersionData, versionData) {
+
+        function getDiff(obj1, obj2) {
+            const result = {};
+            if (Object.is(obj1, obj2)) {
+                return undefined;
+            }
+            if (!obj2 || typeof obj2 !== 'object') {
+                return obj2;
+            }
+            Object.keys(obj1 || {}).concat(Object.keys(obj2 || {})).forEach(key => {
+                if (obj2[key] !== obj1[key] && !Object.is(obj1[key], obj2[key])) {
+                    result[key] = obj2[key];
+                }
+                if (typeof obj2[key] === 'object' && typeof obj1[key] === 'object') {
+                    const value = diff(obj1[key], obj2[key]);
+                    if (value !== undefined) {
+                        result[key] = value;
+                    }
+                }
+            });
+            return result;
+        }
+
+        const diff = await getDiff(oldVersionData, versionData)
+        const modules = diff.downloads
+        const filePaths = Object.keys(modules)
+        for (let filePath of filePaths) {
+            if (filePath === undefined) {
+                fs.unlink(ConfigManager.getInstanceDirectory() + "/" + filePath, (err) => {
+                    if (err) throw err;
+                });
+            }
+        }
+    }
+
     async loadPreviousVersionFilesInfo(targetVersionData) {
         const modules = targetVersionData.downloads
         const ids = Object.keys(modules)
@@ -1255,12 +1291,12 @@ class AssetGuard extends EventEmitter {
     }
 
     /**
-     * Loads the version data for a given version.
-     * 
-     * @param {DistroManager.Version} version The game version for which to load the index data.
-     * @param {boolean} force Optional. If true, the version index will be downloaded even if it exists locally. Defaults to false.
-     * @returns {Promise.<Object>} Promise which resolves to the version data object.
-     */
+         * Loads the version data for a given version.
+         * 
+         * @param {DistroManager.Version} version The game version for which to load the index data.
+         * @param {boolean} force Optional. If true, the version index will be downloaded even if it exists locally. Defaults to false.
+         * @returns {Promise.<Object>} Promise which resolves to the version data object.
+         */
     loadVersionData(version, force = false) {
         const self = this
         return new Promise(async (resolve, reject) => {
@@ -1680,6 +1716,7 @@ class AssetGuard extends EventEmitter {
 
             const versionData = await this.loadVersionData(server.getVersions()[0])
             const reusableModules = await this.loadPreviousVersionFilesInfo(versionData)
+            oldVersionData = await this.loadPreviousVersionFilesInfo(versionData)
 
             this.emit('validate', 'version')
             await this.validateVersion(versionData, reusableModules)
@@ -1689,7 +1726,7 @@ class AssetGuard extends EventEmitter {
             this.emit('validate', 'files')
             await this.processDlQueues(server)
             //this.emit('complete', 'download')
-
+            await this.cleanupPreviousVersionData(oldVersionData, versionData)
 
             const forgeData = {}
 

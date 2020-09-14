@@ -1,6 +1,5 @@
 // Validation Regexes.
 const validNickname = /^[а-яА-Я_]{1,10}$/
-//const validGuild = /^[а-яА-Яa-zA-z_]{1,17}$/
 
 const nicknameDiscordRPC = document.getElementById('nicknameDiscordRPC')
 const discordRPCButton = document.getElementById('discordRPCButton')

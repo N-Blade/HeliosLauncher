@@ -13,8 +13,11 @@ exports.initRPC = function (discordSettings) {
         discordSettings.nickname = 'Странник'
     }
 
-    if (discordSettings.guild === '') {
-        discordSettings.guild = 'Исследует Аэнор...'
+    if (discordSettings.guild === '' || discordSettings.guild === 'Без гильдии') {
+        discordSettings.guild = '   '
+        discordSettings.smallImageKey = '   '
+        discordSettings.smallImageText = '   '
+
     }
 
     if (discordSettings.largeImageText === '') {

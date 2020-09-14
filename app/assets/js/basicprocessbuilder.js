@@ -12,12 +12,12 @@ const logger = LoggerUtil('%c[BasicProcessBuilder]', 'color: #003996; font-weigh
 class ProcessBuilder {
 
   constructor(distroServer, versionData, forgeData, authUser, launcherVersion) {
-    this.gameDir = path.join(ConfigManager.getInstanceDirectory(), distroServer.getID())
+    this.gameDir = path.join(ConfigManager.getInstanceDirectory())
     this._configPath = ConfigManager.getGameConfigPath()
     this.versionData = versionData
     this.authUser = authUser
     this.launcherVersion = launcherVersion
-    this.libPath = path.join(ConfigManager.getInstanceDirectory(), versionData.id)
+    this.libPath = path.join(ConfigManager.getInstanceDirectory())
     this._closeListeners = []
     this._errorListeners = []
     this._useShell = false

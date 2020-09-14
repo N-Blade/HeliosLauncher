@@ -1,14 +1,14 @@
 // Requirements
-const async         = require('async')
+const async = require('async')
 const child_process = require('child_process')
-const crypto        = require('crypto')
-const EventEmitter  = require('events')
-const fs            = require('fs-extra')
-const path          = require('path')
-const Registry      = require('winreg')
-const request       = require('request')
-const xml2js        = require('xml2js')
-const url           = require('url')
+const crypto = require('crypto')
+const EventEmitter = require('events')
+const fs = require('fs-extra')
+const path = require('path')
+const Registry = require('winreg')
+const request = require('request')
+const xml2js = require('xml2js')
+const url = require('url')
 
 const ConfigManager = require('./configmanager')
 const DistroManager = require('./distromanager')
@@ -33,7 +33,7 @@ class Asset {
      * @param {string} from The url where the asset can be found.
      * @param {string} to The absolute local file path of the asset.
      */
-    constructor(id, hash, size, from, to){
+    constructor(id, hash, size, from, to) {
         this.id = id
         this.hash = hash
         this.size = size
@@ -41,18 +41,18 @@ class Asset {
         this.to = to
     }
 
-    _validateLocal(){
+    _validateLocal() {
         return AssetGuard._validateLocal(this.to, this.type != null ? 'md5' : 'sha1', this.hash, this.size)
     }
 }
 
 
-function defer(call){
+function defer(call) {
     return new Promise((resolve, reject) => {
-        call(function(err, data) {
-            if(err){
+        call(function (err, data) {
+            if (err) {
                 reject(err)
-            }else{
+            } else {
                 resolve(data)
             }
         })
@@ -65,25 +65,25 @@ class ModifierRule {
      * @param {string} path
      * @param {Server} server
      */
-    async ensure(path, server){
+    async ensure(path, server) {
         throw new Error('Method is not implemented')
     }
 }
 
 
 class WinCompatibilityModeModifierRule extends ModifierRule {
-    
-    constructor(mode){
+
+    constructor(mode) {
         super()
         this._mode = mode
     }
 
     async ensure(path, server) {
-        let regKey = new Registry({                                  
+        let regKey = new Registry({
             hive: Registry.HKCU,
-            key:  '\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers'
+            key: '\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers'
         })
-    
+
         let keyExists = await defer(cb => regKey.keyExists(cb))
         if (!keyExists) {
             await defer(cb => regKey.create(cb))
@@ -96,7 +96,7 @@ class WinCompatibilityModeModifierRule extends ModifierRule {
 
 class DirectoryModifierRule extends ModifierRule {
 
-    constructor(mode){
+    constructor(mode) {
         super()
         this.mode = mode
     }
@@ -113,7 +113,7 @@ class DirectoryModifierRule extends ModifierRule {
 
 class XmlModifierRule extends ModifierRule {
 
-    constructor(tree){
+    constructor(tree) {
         super()
         this.tree = tree
     }
@@ -122,8 +122,8 @@ class XmlModifierRule extends ModifierRule {
         const tree = this.tree
 
         const exists = await defer(cb => fs.pathExists(filePath, cb))
-        let json  = {}
-        if(exists === true){
+        let json = {}
+        if (exists === true) {
             const data = await defer(cb => fs.readFile(filePath, 'ascii', cb))
             json = await defer(cb => xml2js.parseString(data, { explicitArray: false, trim: true }, cb))
         }
@@ -133,21 +133,21 @@ class XmlModifierRule extends ModifierRule {
             return type === 'object' && !!obj
         }
 
-        function merge(a, b){
-            if(!isObject(b))
+        function merge(a, b) {
+            if (!isObject(b))
                 return b
-            if(!isObject(a))
+            if (!isObject(a))
                 return a
-            
+
             const result = {}
 
             Object.keys(a).concat(Object.keys(b)).forEach(k => {
-                if(!Object.prototype.hasOwnProperty.call(result, k)){
-                    if (!Object.prototype.hasOwnProperty.call(a, k)){
+                if (!Object.prototype.hasOwnProperty.call(result, k)) {
+                    if (!Object.prototype.hasOwnProperty.call(a, k)) {
                         result[k] = b[k]
-                    }else if(!Object.prototype.hasOwnProperty.call(b, k)){
+                    } else if (!Object.prototype.hasOwnProperty.call(b, k)) {
                         result[k] = a[k]
-                    }else{
+                    } else {
                         result[k] = merge(a[k], b[k])
                     }
                 }
@@ -157,26 +157,26 @@ class XmlModifierRule extends ModifierRule {
 
         const result = merge(json, tree)
 
-        function resolve(value){
+        function resolve(value) {
             const argDiscovery = /\${*(.*)}/
-            if(!value){
+            if (!value) {
                 return
             }
             const keys = Object.keys(value)
-            for(let key of keys){
+            for (let key of keys) {
                 const v = value[key]
                 if (argDiscovery.test(v)) {
                     const identifier = v.match(argDiscovery)[1]
-                    switch(identifier){
+                    switch (identifier) {
                         case 'server_address':
                             value[key] = server.getAddress()
                             continue
                     }
-                }else if(isObject(v)){
+                } else if (isObject(v)) {
                     resolve(v)
                 }
             }
-            
+
         }
 
         resolve(result)
@@ -193,13 +193,13 @@ class XmlModifierRule extends ModifierRule {
 
 class EjsModifierRule extends ModifierRule {
 
-    constructor(src){
+    constructor(src) {
         super()
         this._src = src
     }
 
     async ensure(filePath, server) {
-        
+
         const exists = await defer(cb => fs.pathExists(this._src, cb))
         if (!exists) {
             throw new Error('Source does not exists: ' + this._src)
@@ -228,7 +228,7 @@ class Modifier {
      * @param {string} path 
      * @param {Array<ModifierRule>} rules 
      */
-    constructor(path, rules){
+    constructor(path, rules) {
         this.path = path
         this.rules = rules
     }
@@ -236,8 +236,8 @@ class Modifier {
     /**
      * @param {Server} server
      */
-    async apply(server){
-        for(let rule of this.rules){
+    async apply(server) {
+        for (let rule of this.rules) {
             await rule.ensure(this.path, server)
         }
     }
@@ -246,7 +246,7 @@ class Modifier {
 /** Class representing a mojang library. */
 class Library extends Asset {
 
-    constructor(id, checksum, size, urls, targetPath){
+    constructor(id, checksum, size, urls, targetPath) {
         super(id, checksum.hash, size, urls[0], targetPath)
         this.id = id
         this.checksum = checksum
@@ -260,17 +260,17 @@ class Library extends Asset {
      * 
      * @returns {boolean} True if the file exists and calculated hash matches the given hash, otherwise false.
      */
-    _validateLocal(){
-        if(!fs.existsSync(this.targetPath)){
+    _validateLocal() {
+        if (!fs.existsSync(this.targetPath)) {
             return false
         }
-        if (this.size != null){
+        if (this.size != null) {
             const stats = fs.statSync(this.targetPath)
             const calcdSize = stats.size
             if (calcdSize !== this.size)
                 return false
         }
-        if(this.checksum != null && this.checksum.hash != null){
+        if (this.checksum != null && this.checksum.hash != null) {
             const buf = fs.readFileSync(this.targetPath)
             const calcdhash = AssetGuard._calculateHash(buf, this.checksum.algo)
             if (calcdhash !== this.checksum.hash)
@@ -282,13 +282,13 @@ class Library extends Asset {
     /**
      * Converts the process.platform OS names to match mojang's OS names.
      */
-    static mojangFriendlyOS(){
+    static mojangFriendlyOS() {
         const opSys = process.platform
         if (opSys === 'darwin') {
             return 'osx'
-        } else if (opSys === 'win32'){
+        } else if (opSys === 'win32') {
             return 'windows'
-        } else if (opSys === 'linux'){
+        } else if (opSys === 'linux') {
             return 'linux'
         } else {
             return 'unknown_os'
@@ -309,20 +309,20 @@ class Library extends Asset {
      * @param {Object} natives The Library's natives object.
      * @returns {boolean} True if the Library follows the specified rules, otherwise false.
      */
-    static validateRules(rules, natives){
-        if(rules == null) {
+    static validateRules(rules, natives) {
+        if (rules == null) {
             return natives == null || natives[Library.mojangFriendlyOS()] != null
         }
 
-        for(let rule of rules){
+        for (let rule of rules) {
             const action = rule.action
             const osProp = rule.os
-            if(action != null && osProp != null){
+            if (action != null && osProp != null) {
                 const osName = osProp.name
                 const osMoj = Library.mojangFriendlyOS()
-                if(action === 'allow'){
+                if (action === 'allow') {
                     return osName === osMoj
-                } else if(action === 'disallow'){
+                } else if (action === 'disallow') {
                     return osName !== osMoj
                 }
             }
@@ -344,7 +344,7 @@ class DLTracker {
      * @param {number} dlsize The combined size of each asset in the download queue array.
      * @param {function(Asset)} callback Optional callback which is called when an asset finishes downloading.
      */
-    constructor(dlqueue, dlsize, callback = null){
+    constructor(dlqueue, dlsize, callback = null) {
         this.dlqueue = dlqueue
         this.dlsize = dlsize
         this.callback = callback
@@ -361,17 +361,17 @@ class Util {
      * @param {string} desired The desired version.
      * @param {string} actual The actual version.
      */
-    static mcVersionAtLeast(desired, actual){
+    static mcVersionAtLeast(desired, actual) {
         const des = desired.split('.')
         const act = actual.split('.')
 
-        for(let i=0; i<des.length; i++){
+        for (let i = 0; i < des.length; i++) {
             const aInt = act.length > i ? parseInt(act[i]) : 0
             const dInt = parseInt(des[i])
-            if (aInt > dInt){
+            if (aInt > dInt) {
                 return true
-            } else if (aInt < dInt){
-                return false                
+            } else if (aInt < dInt) {
+                return false
             }
         }
         return true
@@ -382,7 +382,7 @@ class Util {
 
 class JavaGuard extends EventEmitter {
 
-    constructor(mcVersion){
+    constructor(mcVersion) {
         super()
         this.mcVersion = mcVersion
     }
@@ -402,7 +402,7 @@ class JavaGuard extends EventEmitter {
 
     //     const url = 'https://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html'
     //     const regex = /https:\/\/.+?(?=\/java)\/java\/jdk\/([0-9]+u[0-9]+)-(b[0-9]+)\/([a-f0-9]{32})?\/jre-\1/
-    
+
     //     return new Promise((resolve, reject) => {
     //         request(url, (err, resp, body) => {
     //             if(!err){
@@ -437,15 +437,15 @@ class JavaGuard extends EventEmitter {
      * 
      * @returns {Promise.<OpenJDKData>} Promise which resolved to an object containing the JRE download data.
      */
-    static _latestOpenJDK(major = '8'){
+    static _latestOpenJDK(major = '8') {
 
         const sanitizedOS = process.platform === 'win32' ? 'windows' : (process.platform === 'darwin' ? 'mac' : process.platform)
 
         const url = `https://api.adoptopenjdk.net/v2/latestAssets/nightly/openjdk${major}?os=${sanitizedOS}&arch=x64&heap_size=normal&openjdk_impl=hotspot&type=jre`
-        
+
         return new Promise((resolve, reject) => {
-            request({url, json: true}, (err, resp, body) => {
-                if(!err && body.length > 0){
+            request({ url, json: true }, (err, resp, body) => {
+                if (!err && body.length > 0) {
                     resolve({
                         uri: body[0].binary_link,
                         size: body[0].binary_size,
@@ -465,12 +465,12 @@ class JavaGuard extends EventEmitter {
      * @param {string} rootDir The root directory of the Java installation.
      * @returns {string} The path to the Java executable.
      */
-    static javaExecFromRoot(rootDir){
-        if(process.platform === 'win32'){
+    static javaExecFromRoot(rootDir) {
+        if (process.platform === 'win32') {
             return path.join(rootDir, 'bin', 'javaw.exe')
-        } else if(process.platform === 'darwin'){
+        } else if (process.platform === 'darwin') {
             return path.join(rootDir, 'Contents', 'Home', 'bin', 'java')
-        } else if(process.platform === 'linux'){
+        } else if (process.platform === 'linux') {
             return path.join(rootDir, 'bin', 'java')
         }
         return rootDir
@@ -482,12 +482,12 @@ class JavaGuard extends EventEmitter {
      * @param {string} pth The path to check against.
      * @returns {boolean} True if the path points to a Java executable, otherwise false.
      */
-    static isJavaExecPath(pth){
-        if(process.platform === 'win32'){
+    static isJavaExecPath(pth) {
+        if (process.platform === 'win32') {
             return pth.endsWith(path.join('bin', 'javaw.exe'))
-        } else if(process.platform === 'darwin'){
+        } else if (process.platform === 'darwin') {
             return pth.endsWith(path.join('bin', 'java'))
-        } else if(process.platform === 'linux'){
+        } else if (process.platform === 'linux') {
             return pth.endsWith(path.join('bin', 'java'))
         }
         return false
@@ -498,10 +498,10 @@ class JavaGuard extends EventEmitter {
      * 
      * @returns {Promise.<Object>} Promise which resolves to Mojang's launcher.json object.
      */
-    static loadMojangLauncherData(){
+    static loadMojangLauncherData() {
         return new Promise((resolve, reject) => {
             request.get('https://launchermeta.mojang.com/mc/launcher.json', (err, resp, body) => {
-                if(err){
+                if (err) {
                     resolve(null)
                 } else {
                     resolve(JSON.parse(body))
@@ -518,9 +518,9 @@ class JavaGuard extends EventEmitter {
      * @param {string} verString Full version string to parse.
      * @returns Object containing the version information.
      */
-    static parseJavaRuntimeVersion(verString){
+    static parseJavaRuntimeVersion(verString) {
         const major = verString.split('.')[0]
-        if(major == 1){
+        if (major == 1) {
             return JavaGuard._parseJavaRuntimeVersion_8(verString)
         } else {
             return JavaGuard._parseJavaRuntimeVersion_9(verString)
@@ -534,7 +534,7 @@ class JavaGuard extends EventEmitter {
      * @param {string} verString Full version string to parse.
      * @returns Object containing the version information.
      */
-    static _parseJavaRuntimeVersion_8(verString){
+    static _parseJavaRuntimeVersion_8(verString) {
         // 1.{major}.0_{update}-b{build}
         // ex. 1.8.0_152-b16
         const ret = {}
@@ -553,7 +553,7 @@ class JavaGuard extends EventEmitter {
      * @param {string} verString Full version string to parse.
      * @returns Object containing the version information.
      */
-    static _parseJavaRuntimeVersion_9(verString){
+    static _parseJavaRuntimeVersion_9(verString) {
         // {major}.{minor}.{revision}+{build}
         // ex. 10.0.2+13
         const ret = {}
@@ -575,7 +575,7 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<Object>} A promise which resolves to a meta object about the JVM.
      * The validity is stored inside the `valid` property.
      */
-    _validateJVMProperties(stderr){
+    _validateJVMProperties(stderr) {
         const res = stderr
         const props = res.split('\n')
 
@@ -584,34 +584,34 @@ class JavaGuard extends EventEmitter {
 
         const meta = {}
 
-        for(let i=0; i<props.length; i++){
-            if(props[i].indexOf('sun.arch.data.model') > -1){
+        for (let i = 0; i < props.length; i++) {
+            if (props[i].indexOf('sun.arch.data.model') > -1) {
                 let arch = props[i].split('=')[1].trim()
                 arch = parseInt(arch)
                 console.log(props[i].trim())
-                if(arch === 64){
+                if (arch === 64) {
                     meta.arch = arch
                     ++checksum
-                    if(checksum === goal){
+                    if (checksum === goal) {
                         break
                     }
                 }
-            } else if(props[i].indexOf('java.runtime.version') > -1){
+            } else if (props[i].indexOf('java.runtime.version') > -1) {
                 let verString = props[i].split('=')[1].trim()
                 console.log(props[i].trim())
                 const verOb = JavaGuard.parseJavaRuntimeVersion(verString)
-                if(verOb.major < 9){
+                if (verOb.major < 9) {
                     // Java 8
-                    if(verOb.major === 8 && verOb.update > 52){
+                    if (verOb.major === 8 && verOb.update > 52) {
                         meta.version = verOb
                         ++checksum
-                        if(checksum === goal){
+                        if (checksum === goal) {
                             break
                         }
                     }
                 } else {
                     // Java 9+
-                    if(Util.mcVersionAtLeast('1.13', this.mcVersion)){
+                    if (Util.mcVersionAtLeast('1.13', this.mcVersion)) {
                         console.log('Java 9+ not yet tested.')
                         /* meta.version = verOb
                         ++checksum
@@ -624,7 +624,7 @@ class JavaGuard extends EventEmitter {
         }
 
         meta.valid = checksum === goal
-        
+
         return meta
     }
 
@@ -641,31 +641,31 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<Object>} A promise which resolves to a meta object about the JVM.
      * The validity is stored inside the `valid` property.
      */
-    _validateJavaBinary(binaryExecPath){
+    _validateJavaBinary(binaryExecPath) {
 
         return new Promise((resolve, reject) => {
-            if(!JavaGuard.isJavaExecPath(binaryExecPath)){
-                resolve({valid: false})
-            } else if(fs.existsSync(binaryExecPath)){
+            if (!JavaGuard.isJavaExecPath(binaryExecPath)) {
+                resolve({ valid: false })
+            } else if (fs.existsSync(binaryExecPath)) {
                 // Workaround (javaw.exe no longer outputs this information.)
                 console.log(typeof binaryExecPath)
-                if(binaryExecPath.indexOf('javaw.exe') > -1) {
+                if (binaryExecPath.indexOf('javaw.exe') > -1) {
                     binaryExecPath.replace('javaw.exe', 'java.exe')
                 }
                 child_process.exec('"' + binaryExecPath + '" -XshowSettings:properties', (err, stdout, stderr) => {
                     try {
                         // Output is stored in stderr?
                         resolve(this._validateJVMProperties(stderr))
-                    } catch (err){
+                    } catch (err) {
                         // Output format might have changed, validation cannot be completed.
-                        resolve({valid: false})
+                        resolve({ valid: false })
                     }
                 })
             } else {
-                resolve({valid: false})
+                resolve({ valid: false })
             }
         })
-        
+
     }
 
     /**
@@ -674,7 +674,7 @@ class JavaGuard extends EventEmitter {
      * 
      * @returns {string} The path defined by JAVA_HOME, if it exists. Otherwise null.
      */
-    static _scanJavaHome(){
+    static _scanJavaHome() {
         const jHome = process.env.JAVA_HOME
         try {
             let res = fs.existsSync(jHome)
@@ -692,7 +692,7 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<Set.<string>>} A promise which resolves to a set of 64-bit Java root
      * paths found in the registry.
      */
-    static _scanRegistry(){
+    static _scanRegistry() {
 
         return new Promise((resolve, reject) => {
             // Keys for Java v9.0.0 and later:
@@ -710,53 +710,53 @@ class JavaGuard extends EventEmitter {
 
             const candidates = new Set()
 
-            for(let i=0; i<regKeys.length; i++){
+            for (let i = 0; i < regKeys.length; i++) {
                 const key = new Registry({
                     hive: Registry.HKLM,
                     key: regKeys[i],
                     arch: 'x64'
                 })
                 key.keyExists((err, exists) => {
-                    if(exists) {
+                    if (exists) {
                         key.keys((err, javaVers) => {
-                            if(err){
+                            if (err) {
                                 keysDone++
                                 console.error(err)
 
                                 // REG KEY DONE
                                 // DUE TO ERROR
-                                if(keysDone === regKeys.length){
+                                if (keysDone === regKeys.length) {
                                     resolve(candidates)
                                 }
                             } else {
-                                if(javaVers.length === 0){
+                                if (javaVers.length === 0) {
                                     // REG KEY DONE
                                     // NO SUBKEYS
                                     keysDone++
-                                    if(keysDone === regKeys.length){
+                                    if (keysDone === regKeys.length) {
                                         resolve(candidates)
                                     }
                                 } else {
 
                                     let numDone = 0
 
-                                    for(let j=0; j<javaVers.length; j++){
+                                    for (let j = 0; j < javaVers.length; j++) {
                                         const javaVer = javaVers[j]
-                                        const vKey = javaVer.key.substring(javaVer.key.lastIndexOf('\\')+1)
+                                        const vKey = javaVer.key.substring(javaVer.key.lastIndexOf('\\') + 1)
                                         // Only Java 8 is supported currently.
-                                        if(parseFloat(vKey) === 1.8){
+                                        if (parseFloat(vKey) === 1.8) {
                                             javaVer.get('JavaHome', (err, res) => {
                                                 const jHome = res.value
-                                                if(jHome.indexOf('(x86)') === -1){
+                                                if (jHome.indexOf('(x86)') === -1) {
                                                     candidates.add(jHome)
                                                 }
 
                                                 // SUBKEY DONE
 
                                                 numDone++
-                                                if(numDone === javaVers.length){
+                                                if (numDone === javaVers.length) {
                                                     keysDone++
-                                                    if(keysDone === regKeys.length){
+                                                    if (keysDone === regKeys.length) {
                                                         resolve(candidates)
                                                     }
                                                 }
@@ -767,9 +767,9 @@ class JavaGuard extends EventEmitter {
                                             // NOT JAVA 8
 
                                             numDone++
-                                            if(numDone === javaVers.length){
+                                            if (numDone === javaVers.length) {
                                                 keysDone++
-                                                if(keysDone === regKeys.length){
+                                                if (keysDone === regKeys.length) {
                                                     resolve(candidates)
                                                 }
                                             }
@@ -784,7 +784,7 @@ class JavaGuard extends EventEmitter {
                         // DUE TO NON-EXISTANCE
 
                         keysDone++
-                        if(keysDone === regKeys.length){
+                        if (keysDone === regKeys.length) {
                             resolve(candidates)
                         }
                     }
@@ -792,7 +792,7 @@ class JavaGuard extends EventEmitter {
             }
 
         })
-        
+
     }
 
     /**
@@ -800,7 +800,7 @@ class JavaGuard extends EventEmitter {
      * 
      * @returns {string} The path of the JRE if found, otherwise null.
      */
-    static _scanInternetPlugins(){
+    static _scanInternetPlugins() {
         // /Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/bin/java
         const pth = '/Library/Internet Plug-Ins/JavaAppletPlugin.plugin'
         const res = fs.existsSync(JavaGuard.javaExecFromRoot(pth))
@@ -814,41 +814,41 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<Set.<string>>} A promise which resolves to a set of the discovered
      * root JVM folders.
      */
-    static _scanFileSystem(scanDir){
+    static _scanFileSystem(scanDir) {
         return new Promise((resolve, reject) => {
 
             fs.exists(scanDir, (e) => {
 
                 let res = new Set()
-                
-                if(e){
+
+                if (e) {
                     fs.readdir(scanDir, (err, files) => {
-                        if(err){
+                        if (err) {
                             resolve(res)
                             console.log(err)
                         } else {
                             let pathsDone = 0
 
-                            for(let i=0; i<files.length; i++){
+                            for (let i = 0; i < files.length; i++) {
 
                                 const combinedPath = path.join(scanDir, files[i])
                                 const execPath = JavaGuard.javaExecFromRoot(combinedPath)
 
                                 fs.exists(execPath, (v) => {
 
-                                    if(v){
+                                    if (v) {
                                         res.add(combinedPath)
                                     }
 
                                     ++pathsDone
 
-                                    if(pathsDone === files.length){
+                                    if (pathsDone === files.length) {
                                         resolve(res)
                                     }
 
                                 })
                             }
-                            if(pathsDone === files.length){
+                            if (pathsDone === files.length) {
                                 resolve(res)
                             }
                         }
@@ -867,17 +867,17 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<Object[]>} A promise which resolves to an array of meta objects
      * for each valid JVM root directory.
      */
-    async _validateJavaRootSet(rootSet){
+    async _validateJavaRootSet(rootSet) {
 
         const rootArr = Array.from(rootSet)
         const validArr = []
 
-        for(let i=0; i<rootArr.length; i++){
+        for (let i = 0; i < rootArr.length; i++) {
 
             const execPath = JavaGuard.javaExecFromRoot(rootArr[i])
             const metaOb = await this._validateJavaBinary(execPath)
 
-            if(metaOb.valid){
+            if (metaOb.valid) {
                 metaOb.execPath = execPath
                 validArr.push(metaOb)
             }
@@ -895,46 +895,46 @@ class JavaGuard extends EventEmitter {
      * @param {Object[]} validArr An array of JVM meta objects.
      * @returns {Object[]} A sorted array of JVM meta objects.
      */
-    static _sortValidJavaArray(validArr){
+    static _sortValidJavaArray(validArr) {
         const retArr = validArr.sort((a, b) => {
 
-            if(a.version.major === b.version.major){
-                
-                if(a.version.major < 9){
+            if (a.version.major === b.version.major) {
+
+                if (a.version.major < 9) {
                     // Java 8
-                    if(a.version.update === b.version.update){
-                        if(a.version.build === b.version.build){
-    
+                    if (a.version.update === b.version.update) {
+                        if (a.version.build === b.version.build) {
+
                             // Same version, give priority to JRE.
-                            if(a.execPath.toLowerCase().indexOf('jdk') > -1){
+                            if (a.execPath.toLowerCase().indexOf('jdk') > -1) {
                                 return b.execPath.toLowerCase().indexOf('jdk') > -1 ? 0 : 1
                             } else {
                                 return -1
                             }
-    
+
                         } else {
                             return a.version.build > b.version.build ? -1 : 1
                         }
                     } else {
-                        return  a.version.update > b.version.update ? -1 : 1
+                        return a.version.update > b.version.update ? -1 : 1
                     }
                 } else {
                     // Java 9+
-                    if(a.version.minor === b.version.minor){
-                        if(a.version.revision === b.version.revision){
-    
+                    if (a.version.minor === b.version.minor) {
+                        if (a.version.revision === b.version.revision) {
+
                             // Same version, give priority to JRE.
-                            if(a.execPath.toLowerCase().indexOf('jdk') > -1){
+                            if (a.execPath.toLowerCase().indexOf('jdk') > -1) {
                                 return b.execPath.toLowerCase().indexOf('jdk') > -1 ? 0 : 1
                             } else {
                                 return -1
                             }
-    
+
                         } else {
                             return a.version.revision > b.version.revision ? -1 : 1
                         }
                     } else {
-                        return  a.version.minor > b.version.minor ? -1 : 1
+                        return a.version.minor > b.version.minor ? -1 : 1
                     }
                 }
 
@@ -960,11 +960,11 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<string>} A Promise which resolves to the executable path of a valid 
      * x64 Java installation. If none are found, null is returned.
      */
-    async _win32JavaValidate(dataDir){
+    async _win32JavaValidate(dataDir) {
 
         // Get possible paths from the registry.
         let pathSet1 = await JavaGuard._scanRegistry()
-        if(pathSet1.length === 0){
+        if (pathSet1.length === 0) {
             // Do a manual file system scan of program files.
             pathSet1 = JavaGuard._scanFileSystem('C:\\Program Files\\Java')
         }
@@ -977,14 +977,14 @@ class JavaGuard extends EventEmitter {
 
         // Validate JAVA_HOME.
         const jHome = JavaGuard._scanJavaHome()
-        if(jHome != null && jHome.indexOf('(x86)') === -1){
+        if (jHome != null && jHome.indexOf('(x86)') === -1) {
             uberSet.add(jHome)
         }
 
         let pathArr = await this._validateJavaRootSet(uberSet)
         pathArr = JavaGuard._sortValidJavaArray(pathArr)
 
-        if(pathArr.length > 0){
+        if (pathArr.length > 0) {
             return pathArr[0].execPath
         } else {
             return null
@@ -1005,7 +1005,7 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<string>} A Promise which resolves to the executable path of a valid 
      * x64 Java installation. If none are found, null is returned.
      */
-    async _darwinJavaValidate(dataDir){
+    async _darwinJavaValidate(dataDir) {
 
         const pathSet1 = await JavaGuard._scanFileSystem('/Library/Java/JavaVirtualMachines')
         const pathSet2 = await JavaGuard._scanFileSystem(path.join(dataDir, 'runtime', 'x64'))
@@ -1014,15 +1014,15 @@ class JavaGuard extends EventEmitter {
 
         // Check Internet Plugins folder.
         const iPPath = JavaGuard._scanInternetPlugins()
-        if(iPPath != null){
+        if (iPPath != null) {
             uberSet.add(iPPath)
         }
 
         // Check the JAVA_HOME environment variable.
         let jHome = JavaGuard._scanJavaHome()
-        if(jHome != null){
+        if (jHome != null) {
             // Ensure we are at the absolute root.
-            if(jHome.contains('/Contents/Home')){
+            if (jHome.contains('/Contents/Home')) {
                 jHome = jHome.substring(0, jHome.indexOf('/Contents/Home'))
             }
             uberSet.add(jHome)
@@ -1031,7 +1031,7 @@ class JavaGuard extends EventEmitter {
         let pathArr = await this._validateJavaRootSet(uberSet)
         pathArr = JavaGuard._sortValidJavaArray(pathArr)
 
-        if(pathArr.length > 0){
+        if (pathArr.length > 0) {
             return pathArr[0].execPath
         } else {
             return null
@@ -1050,23 +1050,23 @@ class JavaGuard extends EventEmitter {
      * @returns {Promise.<string>} A Promise which resolves to the executable path of a valid 
      * x64 Java installation. If none are found, null is returned.
      */
-    async _linuxJavaValidate(dataDir){
+    async _linuxJavaValidate(dataDir) {
 
         const pathSet1 = await JavaGuard._scanFileSystem('/usr/lib/jvm')
         const pathSet2 = await JavaGuard._scanFileSystem(path.join(dataDir, 'runtime', 'x64'))
-        
+
         const uberSet = new Set([...pathSet1, ...pathSet2])
 
         // Validate JAVA_HOME
         const jHome = JavaGuard._scanJavaHome()
-        if(jHome != null){
+        if (jHome != null) {
             uberSet.add(jHome)
         }
-        
+
         let pathArr = await this._validateJavaRootSet(uberSet)
         pathArr = JavaGuard._sortValidJavaArray(pathArr)
 
-        if(pathArr.length > 0){
+        if (pathArr.length > 0) {
             return pathArr[0].execPath
         } else {
             return null
@@ -1079,7 +1079,7 @@ class JavaGuard extends EventEmitter {
      * @param {string} dataDir The base launcher directory.
      * @returns {string} A path to a valid x64 Java installation, null if none found.
      */
-    async validateJava(dataDir){
+    async validateJava(dataDir) {
         return await this['_' + process.platform + 'JavaValidate'](dataDir)
     }
 
@@ -1107,7 +1107,7 @@ class AssetGuard extends EventEmitter {
      * @param {string} launcherVersion The path to a java executable which will be used
      * to finalize installation.
      */
-    constructor(commonPath, launcherVersion){
+    constructor(commonPath, launcherVersion) {
         super()
         this.totaldlsize = 0
         this.progress = 0
@@ -1136,7 +1136,7 @@ class AssetGuard extends EventEmitter {
      * @param {string} algo The hash algorithm.
      * @returns {string} The calculated hash in hex.
      */
-    static _calculateHash(buf, algo){
+    static _calculateHash(buf, algo) {
         return crypto.createHash(algo).update(buf).digest('hex')
     }
 
@@ -1147,12 +1147,12 @@ class AssetGuard extends EventEmitter {
      * @param {string} content The string content of the checksums file.
      * @returns {Object} An object with keys being the file names, and values being the hashes.
      */
-    static _parseChecksumsFile(content){
+    static _parseChecksumsFile(content) {
         let finalContent = {}
         let lines = content.split('\n')
-        for(let i=0; i<lines.length; i++){
+        for (let i = 0; i < lines.length; i++) {
             let bits = lines[i].split(' ')
-            if(bits[1] == null) {
+            if (bits[1] == null) {
                 continue
             }
             finalContent[bits[1]] = bits[0]
@@ -1168,17 +1168,17 @@ class AssetGuard extends EventEmitter {
      * @param {string} hash The existing hash to check against.
      * @returns {boolean} True if the file exists and calculated hash matches the given hash, otherwise false.
      */
-    static _validateLocal(filePath, algo, hash, sizeBytes){
-        if(!fs.existsSync(filePath)){
+    static _validateLocal(filePath, algo, hash, sizeBytes) {
+        if (!fs.existsSync(filePath)) {
             return false
         }
-        if(hash != null){
+        if (hash != null) {
             const buf = fs.readFileSync(filePath)
             const calcdhash = AssetGuard._calculateHash(buf, algo)
             if (calcdhash !== hash)
                 return false
         }
-        if (sizeBytes != null){
+        if (sizeBytes != null) {
             const stats = fs.statSync(filePath)
             const calcdSize = stats.size
             if (calcdSize !== sizeBytes)
@@ -1203,37 +1203,6 @@ class AssetGuard extends EventEmitter {
         return true
     }
 
-    cleanupPreviousVersionData(targetVersionData) {
-        const versionsPath = path.join(this.commonPath, 'versions')
-
-        return defer(cb => fs.readdir(versionsPath, {withFileTypes: true}, cb)).then((versionDirs) => {
-            const toRemove = {}
-
-            for(let versionDir of versionDirs) {
-                if (!versionDir.isDirectory())
-                    continue
-                
-            
-                const versionNumber = versionDir.name
-                if (versionNumber === targetVersionData.id)
-                    continue
-    
-                toRemove[versionNumber] = path.join(versionsPath, versionNumber)
-            }
-    
-            const ids = Object.keys(toRemove)
-            return async.eachLimit(ids, 5, (id, cb) => {
-                const previousLibPath = path.join(ConfigManager.getInstanceDirectory(), id)
-                fs.remove(previousLibPath)
-                    .then(() => {
-                        const configDirPath = toRemove[id]
-                        return fs.remove(configDirPath)
-                    })
-                    .then(cb, cb)
-            })
-        })
-    }
-
     async loadPreviousVersionFilesInfo(targetVersionData) {
         const modules = targetVersionData.downloads
         const ids = Object.keys(modules)
@@ -1241,12 +1210,12 @@ class AssetGuard extends EventEmitter {
         const result = {}
 
         const versionsPath = path.join(this.commonPath, 'versions')
-        const versionDirs = await defer(cb => fs.readdir(versionsPath, {withFileTypes: true}, cb))
-        for(let versionDir of versionDirs) {
+        const versionDirs = await defer(cb => fs.readdir(versionsPath, { withFileTypes: true }, cb))
+        for (let versionDir of versionDirs) {
             if (!versionDir.isDirectory())
                 continue
-            
-        
+
+
             const versionNumber = versionDir.name
             if (versionNumber === targetVersionData.id)
                 continue
@@ -1262,7 +1231,7 @@ class AssetGuard extends EventEmitter {
             const versionInfo = JSON.parse(versionData)
             const previousMoudles = versionInfo.downloads
 
-            for(let id of ids) {
+            for (let id of ids) {
                 const targetModule = modules[id]
                 if (targetModule.type !== 'File')
                     continue
@@ -1273,7 +1242,7 @@ class AssetGuard extends EventEmitter {
                 if (previousMoudle.type !== 'File')
                     continue
 
-                
+
                 if (AssetGuard._compareArtifactInfo(targetModule.artifact, previousMoudle.artifact)) {
                     let versions = result[id] || []
                     versions.push(versionNumber)
@@ -1292,7 +1261,7 @@ class AssetGuard extends EventEmitter {
      * @param {boolean} force Optional. If true, the version index will be downloaded even if it exists locally. Defaults to false.
      * @returns {Promise.<Object>} Promise which resolves to the version data object.
      */
-    loadVersionData(version, force = false){
+    loadVersionData(version, force = false) {
         const self = this
         return new Promise(async (resolve, reject) => {
             const versionPath = path.join(self.commonPath, 'versions', version.id)
@@ -1303,11 +1272,11 @@ class AssetGuard extends EventEmitter {
             }
 
             let fetch = force
-            if(!fetch){
+            if (!fetch) {
                 fs.ensureDirSync(versionPath)
                 fetch = !fs.existsSync(versionFile)
             }
-            if(!fetch){
+            if (!fetch) {
                 const stats = fs.statSync(versionFile)
                 customHeaders['If-Modified-Since'] = stats.mtime.toUTCString()
             }
@@ -1324,18 +1293,18 @@ class AssetGuard extends EventEmitter {
                     'bearer': authAcc.accessToken
                 }
             }
-            if (Object.keys(customHeaders).length > 0){
+            if (Object.keys(customHeaders).length > 0) {
                 opts.headers = customHeaders
             }
 
             request(opts, (error, resp, body) => {
                 console.info(`Downloading ${version.url}`)
-                if(error){
+                if (error) {
                     reject(error)
                     return
                 }
 
-                if(resp.statusCode ===  304){
+                if (resp.statusCode === 304) {
                     resolve(JSON.parse(fs.readFileSync(versionFile)))
                     return
                 }
@@ -1344,7 +1313,7 @@ class AssetGuard extends EventEmitter {
                     reject(resp.statusMessage || body || 'Failed to retive version data')
                     return
                 }
-                    
+
                 let data
                 try {
                     data = JSON.parse(body)
@@ -1352,9 +1321,9 @@ class AssetGuard extends EventEmitter {
                     reject(e)
                     return
                 }
-    
+
                 fs.writeFile(versionFile, body, 'utf-8', (err) => {
-                    if(!err){
+                    if (!err) {
                         resolve(data)
                     } else {
                         reject(err)
@@ -1377,12 +1346,12 @@ class AssetGuard extends EventEmitter {
      * @param {Object} reusableModules Information about same modules in the previous versions which were downloaded and can be reused
      * @returns {Promise.<void>} An empty promise to indicate the async processing has completed.
      */
-    validateVersion(versionData, reusableModules){
+    validateVersion(versionData, reusableModules) {
         const self = this
         return new Promise((resolve, reject) => {
 
             const ids = Object.keys(versionData.downloads)
-            const libPath = path.join(ConfigManager.getInstanceDirectory(), versionData.id)
+            const libPath = path.join(ConfigManager.getInstanceDirectory())
 
             const libDlQueue = []
             let dlSize = 0
@@ -1390,36 +1359,36 @@ class AssetGuard extends EventEmitter {
             // Check validity of each library. If the hashs don't match, download the library.
             async.eachLimit(ids, 5, (id, cb) => {
                 const lib = versionData.downloads[id]
-                if(!Library.validateRules(lib.rules, lib.natives)){
+                if (!Library.validateRules(lib.rules, lib.natives)) {
                     cb()
                     return
                 }
 
-                if(lib.type === 'File'){
-                    const artifact = (lib.natives == null) 
-                        ? lib.artifact 
+                if (lib.type === 'File') {
+                    const artifact = (lib.natives == null)
+                        ? lib.artifact
                         : lib.classifiers[lib.natives[Library.mojangFriendlyOS()].replace('${arch}', process.arch.replace('x', ''))]
 
                     const checksum = artifact.checksum.split(':', 2)
                     const algo = checksum[0].toLowerCase()
                     const hash = checksum[1]
                     const libItm = new Library(
-                        id, 
-                        {'algo': algo, 'hash': hash},
+                        id,
+                        { 'algo': algo, 'hash': hash },
                         artifact.size,
                         artifact.urls,
                         path.join(libPath, artifact.path)
                     )
-                    
-                    if(!libItm._validateLocal()){
+
+                    if (!libItm._validateLocal()) {
                         const previousVersions = reusableModules[id]
                         if (previousVersions) {
                             for (let previousVersion of previousVersions) {
-                                const previousLibPath = path.join(ConfigManager.getInstanceDirectory(), previousVersion)
+                                const previousLibPath = path.join(ConfigManager.getInstanceDirectory())
                                 const previousPath = path.join(previousLibPath, artifact.path)
                                 const previousLib = new Library(
                                     id,
-                                    {'algo': algo, 'hash': hash},
+                                    { 'algo': algo, 'hash': hash },
                                     artifact.size,
                                     artifact.urls,
                                     previousPath
@@ -1432,7 +1401,7 @@ class AssetGuard extends EventEmitter {
                             }
                         }
 
-                        dlSize += (libItm.size*1)
+                        dlSize += (libItm.size * 1)
                         libDlQueue.push(libItm)
                     }
                 }
@@ -1446,17 +1415,17 @@ class AssetGuard extends EventEmitter {
 
     // #endregion
 
-    validateModifiers(versionData){
+    validateModifiers(versionData) {
         const self = this
         return new Promise((resolve, reject) => {
             const modifierDlQueue = []
-            const libPath = path.join(ConfigManager.getInstanceDirectory(), versionData.id)
+            const libPath = path.join(ConfigManager.getInstanceDirectory())
             try {
                 if (versionData.modifiers) {
-                    for(let modifier of versionData.modifiers){
+                    for (let modifier of versionData.modifiers) {
                         const rules = []
-                        for(let rule of modifier.rules){
-                            switch(rule.type){
+                        for (let rule of modifier.rules) {
+                            switch (rule.type) {
                                 case 'xml':
                                     rules.push(new XmlModifierRule(rule.tree))
                                     break
@@ -1484,7 +1453,7 @@ class AssetGuard extends EventEmitter {
                 self.modifiers = modifierDlQueue
 
                 resolve()
-            } catch(err) {
+            } catch (err) {
                 reject(err)
             }
         })
@@ -1508,7 +1477,7 @@ class AssetGuard extends EventEmitter {
                 ))
 
                 resolve()
-            } catch(err) {
+            } catch (err) {
                 reject(err)
             }
         })
@@ -1526,22 +1495,22 @@ class AssetGuard extends EventEmitter {
      * @param {number} limit Optional. The number of async processes to run in parallel.
      * @returns {boolean} True if the process began, otherwise false.
      */
-    startAsyncProcess(identifier, limit = 5){
+    startAsyncProcess(identifier, limit = 5) {
 
         const self = this
         const dlTracker = this[identifier]
         const dlQueue = dlTracker.dlqueue
 
-        if(dlQueue.length <= 0){
+        if (dlQueue.length <= 0) {
             return false
         }
-        
+
         const authAcc = ConfigManager.getSelectedAccount()
 
         async.eachLimit(dlQueue, limit, (asset, cb) => {
 
             function afterLoad() {
-                if(dlTracker.callback != null){
+                if (dlTracker.callback != null) {
                     dlTracker.callback.apply(dlTracker, [asset, self])
                 }
 
@@ -1586,14 +1555,14 @@ class AssetGuard extends EventEmitter {
                 },
                 auth: {
                     'bearer': authAcc.accessToken
-                }   
+                }
             }
 
             let req = request(opt)
             req.pause()
 
             req.on('response', (resp) => {
-                if(resp.statusCode !== 200){
+                if (resp.statusCode !== 200) {
                     req.abort()
                     console.error(`Failed to download ${asset.id}(${typeof asset.from === 'object' ? asset.from.url : asset.from}). Response code ${resp.statusCode}`)
                     cb(`${asset.id}: ${resp.statusMessage}`)
@@ -1602,7 +1571,7 @@ class AssetGuard extends EventEmitter {
 
                 const contentLength = parseInt(resp.headers['content-length'])
 
-                if(contentLength !== asset.size){
+                if (contentLength !== asset.size) {
                     console.log(`WARN: Got ${contentLength} bytes for ${asset.id}: Expected ${asset.size}`)
 
                     // Adjust download
@@ -1629,18 +1598,18 @@ class AssetGuard extends EventEmitter {
             })
 
         }, (err) => {
-            if(err){
+            if (err) {
                 const msg = 'An item in ' + identifier + ' failed to process: ' + err
                 console.log(msg)
                 self.emit('error', 'download', msg)
                 return
             }
-            
+
             console.log('All ' + identifier + ' have been processed successfully')
 
             self[identifier] = new DLTracker([], 0)
 
-            if(self.progress >= self.totaldlsize) {
+            if (self.progress >= self.totaldlsize) {
                 self.emit('complete', 'download')
             }
 
@@ -1660,7 +1629,7 @@ class AssetGuard extends EventEmitter {
      * @param {Server} server 
      * @param {Array.<{id: string, limit: number}>} identifiers Optional. The identifiers to process and corresponding parallel async task limit.
      */
-    processDlQueues(server, identifiers = [{id:'assets', limit:20}, {id:'libraries', limit:5}, {id:'files', limit:5}, {id:'forge', limit:5}]){
+    processDlQueues(server, identifiers = [{ id: 'assets', limit: 20 }, { id: 'libraries', limit: 5 }, { id: 'files', limit: 5 }, { id: 'forge', limit: 5 }]) {
         const self = this
         return new Promise((resolve, reject) => {
             let shouldFire = true
@@ -1669,7 +1638,7 @@ class AssetGuard extends EventEmitter {
             this.totaldlsize = 0
             this.progress = 0
 
-            for(let iden of identifiers){
+            for (let iden of identifiers) {
                 const queue = this[iden.id]
                 this.totaldlsize += queue.dlsize
             }
@@ -1678,16 +1647,16 @@ class AssetGuard extends EventEmitter {
                 resolve()
             })
 
-            for(let iden of identifiers){
+            for (let iden of identifiers) {
                 let r = this.startAsyncProcess(iden.id, iden.limit)
-                if(r)
+                if (r)
                     shouldFire = false
             }
 
-            if(shouldFire){
+            if (shouldFire) {
                 this.emit('complete', 'download')
             }
-        }).then(function() {
+        }).then(function () {
             let p = Promise.resolve()
             for (let modifier of self.modifiers) {
                 p = p.then(() => modifier.apply(server))
@@ -1696,17 +1665,17 @@ class AssetGuard extends EventEmitter {
         })
     }
 
-    async validateEverything(serverid, dev = false){
+    async validateEverything(serverid, dev = false) {
         try {
-            if(!ConfigManager.isLoaded()){
+            if (!ConfigManager.isLoaded()) {
                 ConfigManager.load()
             }
-            
+
             DistroManager.setDevMode(dev)
             const dI = await DistroManager.pullLocal()
-    
+
             const server = dI.getServer(serverid)
-    
+
             // Validate Everything
 
             const versionData = await this.loadVersionData(server.getVersions()[0])
@@ -1720,16 +1689,16 @@ class AssetGuard extends EventEmitter {
             this.emit('validate', 'files')
             await this.processDlQueues(server)
             //this.emit('complete', 'download')
-            await this.cleanupPreviousVersionData(versionData)
+
 
             const forgeData = {}
-        
+
             return {
                 versionData,
                 forgeData
             }
 
-        } catch (err){
+        } catch (err) {
             console.error(err)
             return {
                 versionData: null,
@@ -1737,7 +1706,7 @@ class AssetGuard extends EventEmitter {
                 error: err
             }
         }
-        
+
 
     }
 

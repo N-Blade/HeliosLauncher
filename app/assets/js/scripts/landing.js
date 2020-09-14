@@ -641,6 +641,7 @@ function dlAsync(login = true) {
           const distro = DistroManager.getDistribution();
           if (distro.discord != null && serv.discord != null) {
             let guildname = ConfigManager.getSelectedAccount().discordGuild
+            let guildimage
 
             const initDiscordRPC = async () => {
               guildList.forEach(function (guild) {

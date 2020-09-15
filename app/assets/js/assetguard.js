@@ -9,6 +9,7 @@ const Registry = require('winreg')
 const request = require('request')
 const xml2js = require('xml2js')
 const url = require('url')
+const fetch = require('node-fetch');
 
 const ConfigManager = require('./configmanager')
 const DistroManager = require('./distromanager')
@@ -1239,6 +1240,20 @@ class AssetGuard extends EventEmitter {
         }
     }
 
+
+    async getOptimizedSettings() {
+        if (!fs.existsSync(path.join(ConfigManager.getInstanceDirectory(), "/profiles/preferences.xml"))) {
+            let settings = await fetch('https://raw.githubusercontent.com/kyoto44/BladeLauncher/blade/app/assets/preferences.xml');
+            settings = await settings.text();
+            fs.writeFile(path.join(ConfigManager.getInstanceDirectory(), "/profiles/preferences.xml"), settings, function (err, data) {
+                if (err) {
+                    return console.log(err);
+                }
+            });
+        }
+
+    }
+
     async loadPreviousVersionFilesInfo(targetVersionData) {
         const modules = targetVersionData.downloads
         const ids = Object.keys(modules)
@@ -1727,6 +1742,7 @@ class AssetGuard extends EventEmitter {
             await this.processDlQueues(server)
             //this.emit('complete', 'download')
             await this.cleanupPreviousVersionData(oldVersionData, versionData)
+            await this.getOptimizedSettings()
 
             const forgeData = {}
 

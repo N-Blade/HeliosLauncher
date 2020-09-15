@@ -1,0 +1,134 @@
+<root>
+	<scriptsPreferences>
+		<server>	login1.northernblade.ru	</server>
+		<auto_detect_settings>	false	</auto_detect_settings>
+		<username>	</username>
+		<soundPreferences>
+			<MASTER_VOLUME>	0.000000	</MASTER_VOLUME>
+			<GAMESOUNDS_VOLUME>	0.290698	</GAMESOUNDS_VOLUME>
+			<MUSIC_VOLUME>	0.000000	</MUSIC_VOLUME>
+			<UISOUNDS_VOLUME>	0.000000	</UISOUNDS_VOLUME>
+		</soundPreferences>
+		<graphicsPreferences>
+			<EFFECTS_QUALITY>	0.000000	</EFFECTS_QUALITY>
+		</graphicsPreferences>
+		<uiPreferences>
+			<NPC_OBJECTS_NAME>	1.000000	</NPC_OBJECTS_NAME>
+			<PLAYER_NAME>	0.000000	</PLAYER_NAME>
+			<CHAR_NAME>	1.000000	</CHAR_NAME>
+			<NPC_OBJECTS_BAR>	1.000000	</NPC_OBJECTS_BAR>
+			<PLAYER_BAR>	0.000000	</PLAYER_BAR>
+			<CHAR_BAR>	1.000000	</CHAR_BAR>
+			<NPC_OBJECTS_TAG>	1.000000	</NPC_OBJECTS_TAG>
+			<PLAYER_TAG>	0.000000	</PLAYER_TAG>
+			<CHAR_TAG>	1.000000	</CHAR_TAG>
+			<show_tutorial>	1.000000	</show_tutorial>
+			<selection_outline>	1.000000	</selection_outline>
+		</uiPreferences>
+		<chat>
+			<autoDisappearText>	0.000000	</autoDisappearText>
+			<fontSize>	0.000000	</fontSize>
+		</chat>
+		<controlsPreferences>
+			<MOUSE_SENSITIVITY>	0.220930	</MOUSE_SENSITIVITY>
+		</controlsPreferences>
+	</scriptsPreferences>
+	<graphicsPreferences>
+		<deviceGUID>	D7B71E3E.11CF62C7.01896738.35D6C21B	</deviceGUID>
+		<entry>
+			<label>	MRT_DEPTH	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	SKY_LIGHT_MAP	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+		<entry>
+			<label>	SHADER_VERSION_CAP	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	TEXTURE_QUALITY	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	TEXTURE_COMPRESSION	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	TEXTURE_FILTERING	</label>
+			<activeOption>	2	</activeOption>
+		</entry>
+		<entry>
+			<label>	MORPH_VERTICES	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	SHADOWS_QUALITY	</label>
+			<activeOption>	3	</activeOption>
+		</entry>
+		<entry>
+			<label>	SHADOWS_COUNT	</label>
+			<activeOption>	7	</activeOption>
+		</entry>
+		<entry>
+			<label>	HEAT_SHIMMER	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+		<entry>
+			<label>	BLOOM_FILTER	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+		<entry>
+			<label>	TERRAIN_LOD	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+		<entry>
+			<label>	TERRAIN_MESH_RESOLUTION	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	SPEEDTREE_QUALITY	</label>
+			<activeOption>	2	</activeOption>
+		</entry>
+		<entry>
+			<label>	WATER_QUALITY	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+		<entry>
+			<label>	WATER_SIMULATION	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	WATER_REFLECTIONS	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+		<entry>
+			<label>	FOOT_PRINTS	</label>
+			<activeOption>	0	</activeOption>
+		</entry>
+		<entry>
+			<label>	FAR_PLANE	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+		<entry>
+			<label>	FLORA_DENSITY	</label>
+			<activeOption>	4	</activeOption>
+		</entry>
+		<entry>
+			<label>	OBJECT_LOD	</label>
+			<activeOption>	1	</activeOption>
+		</entry>
+	</graphicsPreferences>
+	<devicePreferences>
+		<windowed>	true	</windowed>
+		<waitVSync>	false	</waitVSync>
+		<tripleBuffering>	true	</tripleBuffering>
+		<aspectRatio>	1.333333	</aspectRatio>
+		<windowedWidth>	1280	</windowedWidth>
+		<windowedHeight>	657	</windowedHeight>
+		<fullscreenWidth>	1280	</fullscreenWidth>
+		<fullscreenHeight>	720	</fullscreenHeight>
+	</devicePreferences>
+	<consoleHistory>	</consoleHistory>
+</root>

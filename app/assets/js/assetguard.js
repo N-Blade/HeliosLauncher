@@ -1252,6 +1252,20 @@ class AssetGuard extends EventEmitter {
         }
     }
 
+    async setCompatibilityMode() {
+        const exePath = path.join(ConfigManager.getInstanceDirectory(), "/bin/nblade.exe")
+        child_process.exec(`reg.exe add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers" /v "${exePath}" /d "WINXPSP3"`, (error, stdout, stderr) => {
+            if (error) {
+                console.log(`error: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                console.log(`stderr: ${stderr}`);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+        });
+    }
 
     async loadPreviousVersionFilesInfo(targetVersionData) {
         const modules = targetVersionData.downloads
@@ -1736,6 +1750,7 @@ class AssetGuard extends EventEmitter {
             if (updateNeeded) {
                 this.emit('validate', 'directx')
             }
+            await this.setCompatibilityMode()
             this.emit('validate', 'version')
             await this.validateVersion(versionData, reusableModules)
             this.emit('validate', 'libraries')

@@ -9,7 +9,7 @@ const Registry = require('winreg')
 const request = require('request')
 const xml2js = require('xml2js')
 const url = require('url')
-const fetch = require('node-fetch');
+const os = require('os');
 
 const ConfigManager = require('./configmanager')
 const DistroManager = require('./distromanager')
@@ -1240,19 +1240,18 @@ class AssetGuard extends EventEmitter {
         }
     }
 
-
-    async getOptimizedSettings() {
-        if (!fs.existsSync(path.join(ConfigManager.getInstanceDirectory(), "/profiles/preferences.xml"))) {
-            let settings = await fetch('https://raw.githubusercontent.com/kyoto44/BladeLauncher/blade/app/assets/preferences.xml');
-            settings = await settings.text();
-            fs.writeFile(path.join(ConfigManager.getInstanceDirectory(), "/profiles/preferences.xml"), settings, function (err, data) {
-                if (err) {
-                    return console.log(err);
-                }
-            });
+    async checkDirectx() {
+        if (!fs.existsSync(path.join(ConfigManager.getInstanceDirectory(), "/profiles"))) {
+            if (os.release() === "6.1.7601" || os.release() === "6.1.7600" ||
+                os.release() === "6.0.6002" || os.release() === "6.0.6001" ||
+                os.release() === "6.0.6000" || os.release() === "5.1.2600" ||
+                os.release() === "5.1.2600.1105-1106" || os.release() === "5.1.2600.2180" ||
+                os.release() === "10.0.17763") {
+                return true
+            }
         }
-
     }
+
 
     async loadPreviousVersionFilesInfo(targetVersionData) {
         const modules = targetVersionData.downloads
@@ -1733,6 +1732,10 @@ class AssetGuard extends EventEmitter {
             const reusableModules = await this.loadPreviousVersionFilesInfo(versionData)
             oldVersionData = await this.loadPreviousVersionFilesInfo(versionData)
 
+            let updateNeeded = await this.checkDirectx()
+            if (updateNeeded) {
+                this.emit('validate', 'directx')
+            }
             this.emit('validate', 'version')
             await this.validateVersion(versionData, reusableModules)
             this.emit('validate', 'libraries')
@@ -1742,7 +1745,6 @@ class AssetGuard extends EventEmitter {
             await this.processDlQueues(server)
             //this.emit('complete', 'download')
             await this.cleanupPreviousVersionData(oldVersionData, versionData)
-            await this.getOptimizedSettings()
 
             const forgeData = {}
 

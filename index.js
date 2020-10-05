@@ -1,5 +1,5 @@
 // Requirements
-const { app, BrowserWindow, ipcMain, Menu } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron')
 const autoUpdater = require('electron-updater').autoUpdater
 const ejse = require('ejs-electron')
 const fs = require('fs')
@@ -41,6 +41,12 @@ function initAutoUpdater(event, data) {
         event.sender.send('autoUpdateNotification', 'realerror', err)
     })
 }
+
+// Redirect to DirectX download page
+ipcMain.on('getDirectX', (event, url) => {
+    event.preventDefault()
+    shell.openExternal(url)
+})
 
 // Open channel to listen for update actions.
 ipcMain.on('autoUpdateAction', (event, arg, data) => {

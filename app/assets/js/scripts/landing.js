@@ -221,6 +221,18 @@ function showLaunchFailure(title, desc) {
   toggleLaunchArea(false);
 }
 
+function showDirectxNote(title, desc) {
+  setOverlayContent(title, desc, "Скачать DirectX", "Закрыть");
+  setOverlayHandler(() => {
+    document.getElementById('overlayAcknowledge').onclick = () => {
+      ipcRenderer.send('getDirectX', 'https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe')
+      toggleOverlay(false)
+    }
+  });
+  toggleOverlay(true);
+  toggleLaunchArea(true);
+}
+
 /* System (Java) Scan */
 
 let sysAEx;
@@ -499,6 +511,14 @@ function dlAsync(login = true) {
           setLaunchPercentage(20, 100);
           loggerLaunchSuite.log("Validated distibution index.");
           setLaunchDetails("Loading version information..");
+          break;
+        case "directx":
+          setLaunchPercentage(30, 100);
+          loggerLaunchSuite.log("DirectX Install Needed!");
+          showDirectxNote(
+            "Требуется установка DirectX!",
+            "Ваша версия Windows устарела и для корректной работы игры, мы рекомендуем Вам установить последнюю версию DirectX."
+          );
           break;
         case "version":
           setLaunchPercentage(40, 100);

@@ -1242,13 +1242,7 @@ class AssetGuard extends EventEmitter {
 
     async checkDirectx() {
         if (!fs.existsSync(path.join(ConfigManager.getInstanceDirectory(), "/profiles"))) {
-            if (os.release() === "6.1.7601" || os.release() === "6.1.7600" ||
-                os.release() === "6.0.6002" || os.release() === "6.0.6001" ||
-                os.release() === "6.0.6000" || os.release() === "5.1.2600" ||
-                os.release() === "5.1.2600.1105-1106" || os.release() === "5.1.2600.2180" ||
-                os.release() === "10.0.17763") {
-                return true
-            }
+            return true
         }
     }
 

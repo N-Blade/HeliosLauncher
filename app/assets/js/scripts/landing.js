@@ -517,7 +517,7 @@ function dlAsync(login = true) {
           loggerLaunchSuite.log("DirectX Install Needed!");
           showDirectxNote(
             "Требуется установка DirectX!",
-            "Ваша версия Windows устарела и для корректной работы игры, мы рекомендуем Вам установить последнюю версию DirectX."
+            "Для корректной работы игры, мы рекомендуем Вам установить последнюю версию DirectX."
           );
           break;
         case "version":

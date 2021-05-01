@@ -312,13 +312,6 @@ class Module {
 
 exports.Module
 
-
-exports.VersionType = {
-    RELEASE: 'release', //compatibility
-    STABLE: 'stable',
-    BETA: 'beta'
-}
-
 class Version {
 
     /**
@@ -601,11 +594,6 @@ exports.pullRemote = async () => {
         await fs.promises.access(distroDest)
         const stats = await fs.promises.stat(distroDest)
         customHeaders['If-Modified-Since'] = stats.mtime.toUTCString()
-    } catch (error) {
-        logger.warn(error)
-    }
-
-    try {
         const response = await got.get(distroURL, {
             headers: customHeaders,
             timeout: 5000
@@ -625,7 +613,7 @@ exports.pullRemote = async () => {
             }
         }
     } catch (error) {
-        throw error
+        logger.error(error)
     }
 }
 

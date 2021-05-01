@@ -446,6 +446,7 @@ function analyzePreviousVersionAssets(targetVersionMeta) {
     /** @type {Object.<string, Array.<Asset>>} */
     const result = {}
     for (let version of versions) {
+        version = JSON.parse(version.json)
         if (version.id === targetVersionMeta.id) {
             continue
         }

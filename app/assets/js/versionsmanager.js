@@ -1,8 +1,9 @@
-const async = require('async')
-const fs = require('fs-extra')
 const path = require('path')
 const got = require('got')
 const _ = require('lodash')
+const Database = require('better-sqlite3')
+const db = new Database('bladelauncher.db', {verbose: console.log})
+
 
 const ConfigManager = require('./configmanager')
 const {
@@ -13,31 +14,6 @@ const {
 const {Util} = require('./helpers')
 
 const logger = require('./loggerutil')('%c[VersionManager]', 'color: #a02d2a; font-weight: bold')
-
-/** @type {?Storage} */
-let _APPLICATION_STORAGE = null
-let _ASSETS_STORAGE = null
-
-class Storage {
-    constructor(storagePath, data) {
-        this.storagePath = storagePath
-        this.data = data
-    }
-
-    /**
-     * @param {string} version_id
-     * @returns {?Version}
-     */
-    get(version_id) {
-        return this.data[version_id]
-    }
-
-    /** @param {Version} version */
-    put(version) {
-        this.data[version.id] = version
-    }
-}
-
 
 class Manifest {
     static fromJSON(json) {
@@ -137,7 +113,6 @@ const VersionType = Object.freeze(function (o) {
     }).bind(o)
     return o
 }({
-    RELEASE: Symbol('release'), //just for compability
     STABLE: Symbol('stable'),
     BETA: Symbol('beta')
 }))
@@ -174,16 +149,15 @@ class Application extends ArtifactsHolder {
      * @param {Manifest} manifest
      * @param {Downloads} downloads
      * @param {Array.<Modifier>} modifiers
-     * @param {Date} fetchTime
      */
-    constructor(id, type, minimumLauncherVersion, manifest, downloads, modifiers, fetchTime) {
-        super(id, downloads, modifiers, fetchTime)
+    constructor(id, type, minimumLauncherVersion, manifest, downloads, modifiers) {
+        super(id, downloads, modifiers)
         this.type = type
         this.minimumLauncherVersion = minimumLauncherVersion
         this.manifest = manifest
     }
 
-    static fromJSON(json, fetchTime = new Date()) {
+    static fromJSON(json) {
         const type = VersionType.getByValue(json.type)
         if (!type) {
             throw new Error('Unsupported version type: ' + type)
@@ -192,7 +166,7 @@ class Application extends ArtifactsHolder {
         const versionStoragePath = path.join(ConfigManager.getApplicationDirectory(), json.id)
         const downloads = Downloads.fromJSON(json.downloads, versionStoragePath)
         const modifiers = Application._resolveModifiers(json.modifiers, ConfigManager.getConfigDirectory())
-        return new Application(json.id, json.type, json.minimumLauncherVersion, manifest, downloads, modifiers, fetchTime)
+        return new Application(json.id, json.type, json.minimumLauncherVersion, manifest, downloads, modifiers)
     }
 }
 
@@ -202,86 +176,22 @@ class Assets extends ArtifactsHolder {
          * @param {string} id
          * @param {Downloads} downloads
          * @param {Array.<Modifier>} modifiers
-         * @param {Date} fetchTime
          */
-    constructor(id, downloads, modifiers, fetchTime) {
-        super(id, downloads, modifiers, fetchTime)
+    constructor(id, downloads, modifiers) {
+        super(id, downloads, modifiers)
     }
 
-    static fromJSON(json, fetchTime = new Date()) {
+    static fromJSON(json) {
         const versionStoragePath = path.join(ConfigManager.getInstanceDirectory(), json.id)
         const downloads = Downloads.fromJSON(json.downloads, versionStoragePath)
         const modifiers = Assets._resolveModifiers(json.modifiers, versionStoragePath)
-        return new Assets(json.id, downloads, modifiers, fetchTime)
+        return new Assets(json.id, downloads, modifiers)
     }
 }
 
 exports.ArtifactsHolder = ArtifactsHolder
 exports.Assets = Assets
 exports.Application = Application
-
-async function loadVersionFile(path, descriptorParser) {
-    const dataPromise = fs.promises.readFile(path)
-    const statsPromise = fs.stat(path)
-    const data = await dataPromise
-    const stats = await statsPromise
-    const versionInfo = JSON.parse(data)
-    return descriptorParser(versionInfo, stats.mtime)
-}
-
-exports.isInited = function () {
-    return _APPLICATION_STORAGE !== null && _ASSETS_STORAGE !== null
-}
-
-
-function getApplicationsPath() {
-    return path.join(ConfigManager.getCommonDirectory(), 'versions', 'application')
-}
-
-function getAssetsPath() {
-    return path.join(ConfigManager.getCommonDirectory(), 'versions', 'assets')
-}
-
-
-exports.init = async function () {
-
-    const initStorage = async function (storagePath, descriptorParser) {
-        const result = {}
-        await fs.promises.mkdir(storagePath, {recursive: true})
-        const versionDirs = await fs.promises.readdir(storagePath, {withFileTypes: true})
-
-        await async.each(versionDirs, async (versionDir) => {
-            if (!versionDir.isDirectory())
-                return
-
-            const versionId = versionDir.name
-            const versionFilePath = path.join(storagePath, versionId, versionId + '.json')
-            try {
-                await fs.promises.access(versionFilePath, fs.constants.R_OK)
-            } catch (err) {
-                logger.warn('Failed to access storage data', storagePath)
-                return
-            }
-
-            try {
-                const version = await loadVersionFile(versionFilePath, descriptorParser)
-                result[version.id] = version
-            } catch (err) {
-                logger.error(err)
-            }
-        })
-
-        return result
-    }
-
-
-    await Promise.all([
-        initStorage(getApplicationsPath(), Application.fromJSON).then(f => _APPLICATION_STORAGE = new Storage(ConfigManager.getApplicationDirectory(), f)),
-        initStorage(getAssetsPath(), Assets.fromJSON).then(f => _ASSETS_STORAGE = new Storage(ConfigManager.getInstanceDirectory(), f))
-    ])
-
-}
-
 
 /**
  * Get or fetch the version data for a given version.
@@ -293,15 +203,15 @@ exports.init = async function () {
 exports.fetch = async function (version, launcherVersion, force = false) {
 
     const token = ConfigManager.getSelectedAccount().accessToken
-    const getMeta = async (existedDescriptor, descriptorParser, url, token, writePath) => {
+    const getMeta = async (existedDescriptor, descriptorParser, url, channel, token) => {
 
         const customHeaders = {
             'User-Agent': 'BladeLauncher/' + launcherVersion,
             'Authorization': `Bearer ${token}`
         }
 
-        if (existedDescriptor && existedDescriptor.fetchTime) {
-            customHeaders['If-Modified-Since'] = existedDescriptor.fetchTime.toUTCString()
+        if (existedDescriptor !== undefined) {
+            customHeaders['If-Modified-Since'] = existedDescriptor.fetchTime
         }
 
         try {
@@ -312,13 +222,27 @@ exports.fetch = async function (version, launcherVersion, force = false) {
             })
             switch (response.statusCode) {
                 case 304: {
-                    logger.info(`No need to downloading ${url} - up to date`)
-                    return existedDescriptor
+                    logger.log(`No need to downloading ${url} - up to date`)
+                    return descriptorParser(existedDescriptor)
                 }
                 case 200: {
                     const descriptor = JSON.parse(response.body)
-                    await fs.promises.mkdir(path.join(writePath, descriptor.id), {recursive: true})
-                    await fs.promises.writeFile(path.join(writePath, descriptor.id, descriptor.id + '.json'), JSON.stringify(descriptor), 'utf-8')
+                    descriptor.fetchTime = new Date().toUTCString()
+                    let descriptorType
+                    if (descriptorParser === Application.fromJSON) {
+                        descriptorType = 'applications'
+                    }
+                    if (descriptorParser === Assets.fromJSON) {
+                        descriptorType = 'assets'
+                    }
+                    db.prepare(`CREATE TABLE IF NOT EXISTS ${descriptorType} (id TEXT NOT NULL UNIQUE, channel TEXT NOT NULL, json TEXT NOT NULL)`).run()
+                    db.prepare(`INSERT OR IGNORE INTO ${descriptorType} (id, channel, json) VALUES (?, ?, ?)`)
+                        .run(
+                            JSON.stringify(descriptor.id),
+                            JSON.stringify(channel),
+                            JSON.stringify(descriptor)
+                        )
+
                     return descriptorParser(descriptor)
                 }
                 default:
@@ -331,28 +255,36 @@ exports.fetch = async function (version, launcherVersion, force = false) {
         }
     }
 
-    const resolvedApplication = () => {
-        const app = _.find(version.applications, {'type': ConfigManager.getReleaseChannel()})
+    const resolvedDescriptor = (json) => {
+        const app = _.find(json, {'type': ConfigManager.getReleaseChannel()})
         if (app === undefined) {
-            return _.find(version.applications, {'type': 'stable'}) //fallback
+            return _.find(json, {'type': 'stable'}) //fallback
         }
         return app
     }
 
     let promises = []
-    const application = resolvedApplication()
-    const existedApplication = _APPLICATION_STORAGE.get(application.id)
-    if (existedApplication && !force) {
-        promises.push(Promise.resolve(existedApplication))
-    } else {
-        promises.push(getMeta(existedApplication, Application.fromJSON, application.url, token, getApplicationsPath()).then(m => {_APPLICATION_STORAGE.put(m); return m}))
+    const application = resolvedDescriptor(version.applications)
+    let existedApplication
+    try {
+        existedApplication = db.prepare('SELECT json FROM applications WHERE id = ? AND channel = ?')
+            .get(JSON.stringify(application.id), JSON.stringify(application.type))
+        if (existedApplication && !force) {
+            promises.push(getMeta(JSON.parse(existedApplication.json), Application.fromJSON, application.url, application.type, token).then(m => {return m}))
+        }
+    } catch (error) {
+        promises.push(getMeta(undefined, Application.fromJSON, application.url, application.type, token).then(m => {return m}))
     }
 
-    const existedAssets = _ASSETS_STORAGE.get(version.id)
-    if (existedAssets && !force) {
-        promises.push(Promise.resolve(existedAssets))
-    } else {
-        promises.push(getMeta(existedAssets, Assets.fromJSON, version.url, token, getAssetsPath()).then(m => {_ASSETS_STORAGE.put(m); return m}))
+
+    const assets = resolvedDescriptor(version) //Change below when server will be fixed
+    let existedAssets
+    try {
+        existedAssets = db.prepare('SELECT json FROM assets WHERE id = ? AND channel = ?')
+            .get(JSON.stringify(version.id), JSON.stringify(version.type))
+        promises.push(getMeta(JSON.parse(existedAssets.json), Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
+    } catch (error) {
+        promises.push(getMeta(undefined, Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
     }
 
     return await Promise.all(promises)
@@ -361,14 +293,16 @@ exports.fetch = async function (version, launcherVersion, force = false) {
 /**
  * @returns {Array<Version>}
  */
-exports.versions = function () {
-    return Object.values(_ASSETS_STORAGE.data)
+exports.versions = () => {
+    return db.prepare('SELECT json FROM assets WHERE channel = ?')
+        .all('"release"')
 }
 
 /**
  * @param {string} versionId
  * @returns {?Version}
  */
-exports.get = function (versionId) {
-    return _ASSETS_STORAGE.get(versionId)
+exports.get = (versionId) => {
+    return db.prepare('SELECT json FROM assets WHERE id = ? AND channel = ?')
+        .get(JSON.stringify(versionId), '"release"')
 }

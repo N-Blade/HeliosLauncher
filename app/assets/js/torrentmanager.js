@@ -5,6 +5,8 @@ const path = require('path')
 const parseTorrent = require('parse-torrent')
 const WebTorrent = require('webtorrent')
 const FSChunkStore = require('fs-chunk-store')
+const Database = require('better-sqlite3')
+const db = new Database('bladelauncher.db', {verbose: console.log})
 
 const ConfigManager = require('./configmanager')
 const LoggerUtil = require('./loggerutil')
@@ -15,42 +17,17 @@ const logger = LoggerUtil('%c[TorrentManager]', 'color: #a02d2a; font-weight: bo
 
 class TorrentHolder {
 
-    static get torrentsBlobPath() {
-        return path.join(ConfigManager.getCommonDirectory(), 'torrents.blob')
-    }
-
     static async add(targetPath, torrentFile) {
-        const torrentsBlob = await this._readBlob()
-        torrentsBlob[targetPath] = {torrent: torrentFile.toString('base64')}
-        await fs.promises.writeFile(this.torrentsBlobPath, JSON.stringify(torrentsBlob), 'UTF8')
+        db.prepare('CREATE TABLE IF NOT EXISTS torrents (path TEXT NOT NULL UNIQUE, torrentdata TEXT NOT NULL UNIQUE)').run()
+        db.prepare('INSERT OR IGNORE INTO torrents (path, torrentdata) VALUES (?, ?)')
+            .run(
+                JSON.stringify(targetPath),
+                torrentFile.toString('base64')
+            )
     }
 
     static async getData() {
-        const torrentsBlob = await this._readBlob()
-        const promises = []
-        const entries = Object.keys(torrentsBlob)
-        for (const targetPath of entries) {
-            promises.push(fs.promises.access(targetPath).catch((_) => {
-                delete torrentsBlob[targetPath]
-            }))
-        }
-        await Promise.all(promises)
-        if (entries.length !== promises.length) {
-            await fs.promises.writeFile(this.torrentsBlobPath, JSON.stringify(torrentsBlob), 'UTF8')
-        }
-        return torrentsBlob
-    }
-
-    static async _readBlob() {
-        try {
-            await fs.promises.access(this.torrentsBlobPath, fs.constants.R_OK)
-            const data = await fs.readFile(this.torrentsBlobPath, 'UTF8')
-            return JSON.parse(data)
-        } catch (e) {
-            logger.warn('bad blob file, skipping...', e)
-            await fs.promises.writeFile(this.torrentsBlobPath, JSON.stringify({}), 'UTF8')
-            return {}
-        }
+        return db.prepare('SELECT * FROM torrents').all()
     }
 }
 

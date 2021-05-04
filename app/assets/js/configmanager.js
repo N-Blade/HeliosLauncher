@@ -1,8 +1,10 @@
 const fs = require('fs-extra')
 const os = require('os')
 const path = require('path')
+const Database = require('better-sqlite3')
 const Fingerprint = require('./fingerprint')
 const logger = require('./loggerutil')('%c[ConfigManager]', 'color: #a02d2a; font-weight: bold')
+const db = new Database('bladelauncher.db', {verbose: console.log})
 
 const sysRoot = process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
 const defaultDataPathRoot = path.join(sysRoot, '.nblade')
@@ -112,8 +114,12 @@ let config = null
 /**
  * Save the current configuration to a file.
  */
-exports.save = function () {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 4), 'UTF-8')
+exports.save = () => {
+    db.prepare('INSERT OR REPLACE INTO config (id, json) VALUES (?, ?)')
+        .run(
+            1,
+            JSON.stringify(config),
+        )
 }
 
 /**
@@ -122,26 +128,25 @@ exports.save = function () {
  * be generated. Note that "resolved" values default to null and will
  * need to be externally assigned.
  */
-exports.load = function () {
+exports.load = () => {
     let doLoad = true
-
-    if (!fs.existsSync(configPath)) {
-        // Create all parent directories.
-        fs.ensureDirSync(path.join(configPath, '..'))
+    db.prepare('CREATE TABLE IF NOT EXISTS config (id INTEGER NOT NULL UNIQUE, json TEXT NOT NULL)').run()
+    const rawConfig = db.prepare('SELECT json FROM config').get()
+    if (!rawConfig) {
         doLoad = false
         config = DEFAULT_CONFIG
         exports.save()
     }
+
     if (doLoad) {
         let doValidate = false
         try {
-            config = JSON.parse(fs.readFileSync(configPath, 'UTF-8'))
+            config = JSON.parse(rawConfig.json)
             doValidate = true
         } catch (err) {
             logger.error(err)
             logger.log('Configuration file contains malformed JSON or is corrupt.')
             logger.log('Generating a new configuration file.')
-            fs.ensureDirSync(path.join(configPath, '..'))
             config = DEFAULT_CONFIG
             exports.save()
         }

@@ -28,7 +28,7 @@ class DatabaseManager {
             .all(JSON.stringify(channel))
     }
 
-    static getVersion(versionId, channel) {  //remove later
+    static getVersion(versionId, channel = 'release') {  //remove later
         return db.prepare('SELECT json FROM assets WHERE id = ? AND channel = ?')
             .get(JSON.stringify(versionId), JSON.stringify(channel))
     }

@@ -201,7 +201,7 @@ exports.Application = Application
 exports.fetch = async function (version, launcherVersion, force = false) {
 
     const token = ConfigManager.getSelectedAccount().accessToken
-    const getMeta = async (existedDescriptor, descriptorParser, url, channel, token) => {
+    const getMeta = async (descriptorParser, url, channel, token, existedDescriptor = undefined) => {
 
         const customHeaders = {
             'User-Agent': 'BladeLauncher/' + launcherVersion,
@@ -261,10 +261,10 @@ exports.fetch = async function (version, launcherVersion, force = false) {
     try {
         existedApplication = DatabaseManager.getDescriptor('application', application.id, application.type)
         if (existedApplication && !force) {
-            promises.push(getMeta(JSON.parse(existedApplication.json), Application.fromJSON, application.url, application.type, token).then(m => {return m}))
+            promises.push(getMeta(Application.fromJSON, application.url, application.type, token, JSON.parse(existedApplication.json)).then(m => {return m}))
         }
     } catch (error) {
-        promises.push(getMeta(undefined, Application.fromJSON, application.url, application.type, token).then(m => {return m}))
+        promises.push(getMeta(Application.fromJSON, application.url, application.type, token).then(m => {return m}))
     }
 
 
@@ -272,9 +272,9 @@ exports.fetch = async function (version, launcherVersion, force = false) {
     let existedAssets
     try {
         existedAssets = DatabaseManager.getDescriptor('assets', version.id, version.type)
-        promises.push(getMeta(JSON.parse(existedAssets.json), Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
+        promises.push(getMeta(Assets.fromJSON, version.url, version.type, token, JSON.parse(existedAssets.json)).then(m => {return m}))
     } catch (error) {
-        promises.push(getMeta(undefined, Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
+        promises.push(getMeta(Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
     }
 
     return await Promise.all(promises)
@@ -284,7 +284,11 @@ exports.fetch = async function (version, launcherVersion, force = false) {
  * @returns {Array<Version>}
  */
 exports.versions = () => {
-    return DatabaseManager.getAllVersions()
+    let versionsArr = DatabaseManager.getAllVersions()
+    for (const [i, version] of versionsArr.entries()) {
+        versionsArr[i] = Assets.fromJSON(JSON.parse(version.json))
+    }
+    return versionsArr
 }
 
 /**
@@ -292,5 +296,5 @@ exports.versions = () => {
  * @returns {?Version}
  */
 exports.get = (versionId, channel = 'release') => {
-    return DatabaseManager.getVersion(versionId, channel) //add channel later
+    return Assets.fromJSON(JSON.parse(DatabaseManager.getVersion(versionId, channel).json)) //add channel later
 }

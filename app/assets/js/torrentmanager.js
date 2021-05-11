@@ -1,5 +1,4 @@
 const EventEmitter = require('events')
-const fs = require('fs-extra')
 const path = require('path')
 
 const parseTorrent = require('parse-torrent')

@@ -245,7 +245,7 @@ class PatchFetcher extends Fetcher {
             throw new Error(`Unsupported sub uri protocol: ${subUrl.protocol}.`)
         }
 
-        const baseVersion = VersionsManager.get(baseVersionId)
+        const baseVersion = VersionsManager.Assets.fromJSON(JSON.parse(VersionsManager.get(baseVersionId).json))
         if (!baseVersion) {
             throw new Error(`Base version not exists: ${baseVersionId}.`)
         }
@@ -439,14 +439,13 @@ function _compareArtifactInfo(a, b) {
  */
 function analyzePreviousVersionAssets(targetVersionMeta) {
     const versions = VersionsManager.versions()
-
     const modules = targetVersionMeta.downloads
     const ids = Object.keys(modules)
 
     /** @type {Object.<string, Array.<Asset>>} */
     const result = {}
     for (let version of versions) {
-        version = JSON.parse(version.json)
+        version = VersionsManager.Assets.fromJSON(JSON.parse(version.json))
         if (version.id === targetVersionMeta.id) {
             continue
         }

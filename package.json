@@ -38,7 +38,7 @@
     "electron-updater": "^4.3.8",
     "fast-xml-parser": "^3.19.0",
     "form-data": "^4.0.0",
-    "fs-extra": "^9.1.0",
+    "fs-extra": "^10.0.0",
     "github-syntax-dark": "^0.5.0",
     "got": "^11.8.2",
     "jquery": "^3.6.0",

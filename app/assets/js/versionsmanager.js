@@ -1,9 +1,6 @@
 const path = require('path')
 const got = require('got')
 const _ = require('lodash')
-const Database = require('better-sqlite3')
-const db = new Database('bladelauncher.db', {verbose: console.log})
-
 
 const ConfigManager = require('./configmanager')
 const {
@@ -12,6 +9,7 @@ const {
     XmlModifierRule,
 } = require('./assets')
 const {Util} = require('./helpers')
+const {DatabaseManager} = require('./databasemanager')
 
 const logger = require('./loggerutil')('%c[VersionManager]', 'color: #a02d2a; font-weight: bold')
 
@@ -235,13 +233,7 @@ exports.fetch = async function (version, launcherVersion, force = false) {
                     if (descriptorParser === Assets.fromJSON) {
                         descriptorType = 'assets'
                     }
-                    db.prepare(`CREATE TABLE IF NOT EXISTS ${descriptorType} (id TEXT NOT NULL UNIQUE, channel TEXT NOT NULL, json TEXT NOT NULL)`).run()
-                    db.prepare(`INSERT OR IGNORE INTO ${descriptorType} (id, channel, json) VALUES (?, ?, ?)`)
-                        .run(
-                            JSON.stringify(descriptor.id),
-                            JSON.stringify(channel),
-                            JSON.stringify(descriptor)
-                        )
+                    DatabaseManager.putDescriptor(descriptorType, channel, descriptor)
 
                     return descriptorParser(descriptor)
                 }
@@ -267,8 +259,7 @@ exports.fetch = async function (version, launcherVersion, force = false) {
     const application = resolvedDescriptor(version.applications)
     let existedApplication
     try {
-        existedApplication = db.prepare('SELECT json FROM applications WHERE id = ? AND channel = ?')
-            .get(JSON.stringify(application.id), JSON.stringify(application.type))
+        existedApplication = DatabaseManager.getDescriptor('application', application.id, application.type)
         if (existedApplication && !force) {
             promises.push(getMeta(JSON.parse(existedApplication.json), Application.fromJSON, application.url, application.type, token).then(m => {return m}))
         }
@@ -280,8 +271,7 @@ exports.fetch = async function (version, launcherVersion, force = false) {
     const assets = resolvedDescriptor(version) //Change below when server will be fixed
     let existedAssets
     try {
-        existedAssets = db.prepare('SELECT json FROM assets WHERE id = ? AND channel = ?')
-            .get(JSON.stringify(version.id), JSON.stringify(version.type))
+        existedAssets = DatabaseManager.getDescriptor('assets', version.id, version.type)
         promises.push(getMeta(JSON.parse(existedAssets.json), Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
     } catch (error) {
         promises.push(getMeta(undefined, Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
@@ -294,15 +284,13 @@ exports.fetch = async function (version, launcherVersion, force = false) {
  * @returns {Array<Version>}
  */
 exports.versions = () => {
-    return db.prepare('SELECT json FROM assets WHERE channel = ?')
-        .all('"release"')
+    return DatabaseManager.getAllVersions()
 }
 
 /**
  * @param {string} versionId
  * @returns {?Version}
  */
-exports.get = (versionId) => {
-    return db.prepare('SELECT json FROM assets WHERE id = ? AND channel = ?')
-        .get(JSON.stringify(versionId), '"release"')
+exports.get = (versionId, channel = 'release') => {
+    return DatabaseManager.getVersion(versionId, channel) //add channel later
 }

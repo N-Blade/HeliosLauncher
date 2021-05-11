@@ -1,10 +1,9 @@
 const fs = require('fs-extra')
 const os = require('os')
 const path = require('path')
-const Database = require('better-sqlite3')
+const {DatabaseManager} = require('./databasemanager')
 const Fingerprint = require('./fingerprint')
 const logger = require('./loggerutil')('%c[ConfigManager]', 'color: #a02d2a; font-weight: bold')
-const db = new Database('bladelauncher.db', {verbose: console.log})
 
 const sysRoot = process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
 const defaultDataPathRoot = path.join(sysRoot, '.nblade')
@@ -115,11 +114,7 @@ let config = null
  * Save the current configuration to a file.
  */
 exports.save = () => {
-    db.prepare('INSERT OR REPLACE INTO config (id, json) VALUES (?, ?)')
-        .run(
-            1,
-            JSON.stringify(config),
-        )
+    DatabaseManager.saveConfig(config)
 }
 
 /**
@@ -130,8 +125,7 @@ exports.save = () => {
  */
 exports.load = () => {
     let doLoad = true
-    db.prepare('CREATE TABLE IF NOT EXISTS config (id INTEGER NOT NULL UNIQUE, json TEXT NOT NULL)').run()
-    const rawConfig = db.prepare('SELECT json FROM config').get()
+    const rawConfig = DatabaseManager.getConfig()
     if (!rawConfig) {
         doLoad = false
         config = DEFAULT_CONFIG

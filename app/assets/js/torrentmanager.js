@@ -4,12 +4,11 @@ const path = require('path')
 const parseTorrent = require('parse-torrent')
 const WebTorrent = require('webtorrent')
 const FSChunkStore = require('fs-chunk-store')
-const Database = require('better-sqlite3')
-const db = new Database('bladelauncher.db', {verbose: console.log})
 
 const ConfigManager = require('./configmanager')
 const LoggerUtil = require('./loggerutil')
 const {TimeoutEmitter} = require('./helpers')
+const {DatabaseManager} = require('./databasemanager')
 
 const logger = LoggerUtil('%c[TorrentManager]', 'color: #a02d2a; font-weight: bold')
 
@@ -17,16 +16,11 @@ const logger = LoggerUtil('%c[TorrentManager]', 'color: #a02d2a; font-weight: bo
 class TorrentHolder {
 
     static async add(targetPath, torrentFile) {
-        db.prepare('CREATE TABLE IF NOT EXISTS torrents (path TEXT NOT NULL UNIQUE, torrentdata TEXT NOT NULL UNIQUE)').run()
-        db.prepare('INSERT OR IGNORE INTO torrents (path, torrentdata) VALUES (?, ?)')
-            .run(
-                JSON.stringify(targetPath),
-                torrentFile.toString('base64')
-            )
+        DatabaseManager.addTorrent(targetPath, torrentFile)
     }
 
     static async getData() {
-        return db.prepare('SELECT * FROM torrents').all()
+        return DatabaseManager.getAllTorrents()
     }
 }
 

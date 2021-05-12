@@ -254,14 +254,15 @@ exports.getCrashDumpDirectory = function () {
  * @returns {string} The launcher's instance directory.
  */
 exports.getInstanceDirectory = function () {
-    return path.join(exports.getDataDirectory(), 'instances', exports.getReleaseChannel())
+    return path.join(exports.getDataDirectory(), 'instances')
 }
 
 exports.getApplicationDirectory = function () {
-    return path.join(exports.getDataDirectory(), 'applications', exports.getReleaseChannel())
+    return path.join(exports.getDataDirectory(), 'applications')
 }
 
 exports.getConfigDirectory = function () {
+
     return path.join(exports.getCommonDirectory(), 'config')
 }
 

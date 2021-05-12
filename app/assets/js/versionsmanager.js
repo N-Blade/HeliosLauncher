@@ -9,7 +9,7 @@ const {
     XmlModifierRule,
 } = require('./assets')
 const {Util} = require('./helpers')
-const {VersionsDBManager, DescriptorDBManager} = require('./databasemanager')
+const {VersionsDBManager, ApplicationDBManager, AssetsDBManager} = require('./databasemanager')
 
 const logger = require('./loggerutil')('%c[VersionManager]', 'color: #a02d2a; font-weight: bold')
 
@@ -230,17 +230,7 @@ exports.fetch = async function (version, launcherVersion, force = false) {
                     } catch (error) {
                         throw ("Bad descriptor", error)
                     }
-
                     descriptor.fetchTime = new Date().toUTCString()
-                    let descriptorType
-                    if (descriptorParser === Application.fromJSON) {
-                        descriptorType = 'applications'
-                    }
-                    if (descriptorParser === Assets.fromJSON) {
-                        descriptorType = 'assets'
-                    }
-                    DescriptorDBManager.put(descriptorType, descriptor)
-
                     return descriptorParser(descriptor)
                 }
                 default:
@@ -265,26 +255,32 @@ exports.fetch = async function (version, launcherVersion, force = false) {
     const application = resolvedDescriptor(version.applications)
     let existedDescriptor
     try {
-        const existedApplication = DescriptorDBManager.get('applications', application.id)
+        const existedApplication = ApplicationDBManager.get(application.id)
         if (existedApplication && !force) {
             existedDescriptor = JSON.parse(existedApplication.descriptor)
         }
     } catch (error) {
         logger.warn(error)
     }
-    promises.push(getMeta(Application.fromJSON, application.url, application.type, token, existedDescriptor).then(m => {return m}))
+    promises.push(getMeta(descriptor => {
+        ApplicationDBManager.put(descriptor)
+        return Application.fromJSON(descriptor)
+    }, application.url, application.type, token, existedDescriptor))
 
 
     const assets = resolvedDescriptor(version) //Change below when server will be fixed
     try {
-        const existedAssets = DescriptorDBManager.get('assets', version.id)
+        const existedAssets = AssetsDBManager.get(version.id)
         if (existedAssets && !force) {
             existedDescriptor = JSON.parse(existedAssets.descriptor)
         }
     } catch (error) {
         logger.warn(error)
     }
-    promises.push(getMeta(Assets.fromJSON, version.url, version.type, token, existedDescriptor).then(m => {return m}))
+    promises.push(getMeta(descriptor => {
+        AssetsDBManager.put(descriptor)
+        return Assets.fromJSON(descriptor)
+    }, version.url, version.type, token, existedDescriptor))
 
     return await Promise.all(promises)
 }

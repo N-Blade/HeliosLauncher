@@ -25,20 +25,39 @@ class DatabaseManager {
     }
 }
 
-class DescriptorManager extends DatabaseManager {
+class ApplicationManager extends DatabaseManager {
     constructor(db) {
         super(db)
         this.db.prepare('CREATE TABLE IF NOT EXISTS applications (id TEXT NOT NULL UNIQUE, descriptor json NOT NULL)').run()
-        this.db.prepare('CREATE TABLE IF NOT EXISTS assets (id TEXT NOT NULL UNIQUE, descriptor json NOT NULL)').run()
     }
 
-    get(type, id) {
-        return this.db.prepare(`SELECT descriptor FROM ${type} WHERE id = ?`)
+    get(id) {
+        return this.db.prepare(`SELECT descriptor FROM applications WHERE id = ?`)
             .get(JSON.stringify(id))
     }
 
-    put(type, descriptor) {
-        this.db.prepare(`INSERT OR IGNORE INTO ${type} (id, descriptor) VALUES (?, ?)`)
+    put(descriptor) {
+        this.db.prepare(`INSERT OR IGNORE INTO applications (id, descriptor) VALUES (?, ?)`)
+            .run(
+                JSON.stringify(descriptor.id),
+                JSON.stringify(descriptor)
+            )
+    }
+}
+
+class AssetsManager extends DatabaseManager {
+    constructor(db) {
+        super(db)
+        this.db.prepare('CREATE TABLE IF NOT EXISTS assets (id TEXT NOT NULL UNIQUE, descriptor json NOT NULL)').run()
+    }
+
+    get(id) {
+        return this.db.prepare(`SELECT descriptor FROM assets WHERE id = ?`)
+            .get(JSON.stringify(id))
+    }
+
+    put(descriptor) {
+        this.db.prepare(`INSERT OR IGNORE INTO assets (id, descriptor) VALUES (?, ?)`)
             .run(
                 JSON.stringify(descriptor.id),
                 JSON.stringify(descriptor)
@@ -54,7 +73,7 @@ class VersionsManager extends DatabaseManager {
 
     getAll(channel = 'release') {  //remove later
         return this.db.prepare("SELECT descriptor FROM assets WHERE json_extract(descriptor, '$.type') = ?")
-            .all(JSON.stringify(channel))
+            .all(channel)
     }
 }
 
@@ -98,7 +117,8 @@ class TorrentManager extends DatabaseManager {
 }
 
 module.exports = {
-    DescriptorDBManager: new DescriptorManager(),
+    ApplicationDBManager: new ApplicationManager(),
+    AssetsDBManager: new AssetsManager(),
     VersionsDBManager: new VersionsManager(),
     ConfigDBManager: new ConfigManager(),
     TorrentDBManager: new TorrentManager()

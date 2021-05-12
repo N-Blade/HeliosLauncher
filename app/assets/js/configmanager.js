@@ -1,7 +1,8 @@
 const fs = require('fs-extra')
 const os = require('os')
 const path = require('path')
-const {DatabaseManager} = require('./databasemanager')
+const {ConfigDBManager} = require('./databasemanager')
+
 const Fingerprint = require('./fingerprint')
 const logger = require('./loggerutil')('%c[ConfigManager]', 'color: #a02d2a; font-weight: bold')
 
@@ -114,7 +115,7 @@ let config = null
  * Save the current configuration to a file.
  */
 exports.save = () => {
-    DatabaseManager.saveConfig(config)
+    ConfigDBManager.save(config)
 }
 
 /**
@@ -125,7 +126,7 @@ exports.save = () => {
  */
 exports.load = () => {
     let doLoad = true
-    const rawConfig = DatabaseManager.getConfig()
+    const rawConfig = ConfigDBManager.get()
     if (!rawConfig) {
         doLoad = false
         config = DEFAULT_CONFIG
@@ -135,7 +136,7 @@ exports.load = () => {
     if (doLoad) {
         let doValidate = false
         try {
-            config = JSON.parse(rawConfig.json)
+            config = JSON.parse(rawConfig.config)
             doValidate = true
         } catch (err) {
             logger.error(err)

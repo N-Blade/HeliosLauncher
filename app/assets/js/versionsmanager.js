@@ -9,7 +9,7 @@ const {
     XmlModifierRule,
 } = require('./assets')
 const {Util} = require('./helpers')
-const {DatabaseManager} = require('./databasemanager')
+const {VersionsDBManager, DescriptorDBManager} = require('./databasemanager')
 
 const logger = require('./loggerutil')('%c[VersionManager]', 'color: #a02d2a; font-weight: bold')
 
@@ -201,7 +201,7 @@ exports.Application = Application
 exports.fetch = async function (version, launcherVersion, force = false) {
 
     const token = ConfigManager.getSelectedAccount().accessToken
-    const getMeta = async (descriptorParser, url, channel, token, existedDescriptor = undefined) => {
+    const getMeta = async (descriptorParser, url, token, existedDescriptor = undefined) => {
 
         const customHeaders = {
             'User-Agent': 'BladeLauncher/' + launcherVersion,
@@ -213,18 +213,24 @@ exports.fetch = async function (version, launcherVersion, force = false) {
         }
 
         try {
-            logger.log(`Fetching descriptor '${url}' metadata.`)
+            logger.info(`Fetching descriptor '${url}' metadata.`)
             const response = await got.get(url, {
                 headers: customHeaders,
                 timeout: 5000
             })
             switch (response.statusCode) {
                 case 304: {
-                    logger.log(`No need to downloading ${url} - up to date`)
+                    logger.info(`No need to downloading ${url} - up to date`)
                     return descriptorParser(existedDescriptor)
                 }
                 case 200: {
-                    const descriptor = JSON.parse(response.body)
+                    let descriptor
+                    try {
+                        descriptor = JSON.parse(response.body)
+                    } catch (error) {
+                        throw ("Bad descriptor", error)
+                    }
+
                     descriptor.fetchTime = new Date().toUTCString()
                     let descriptorType
                     if (descriptorParser === Application.fromJSON) {
@@ -233,7 +239,7 @@ exports.fetch = async function (version, launcherVersion, force = false) {
                     if (descriptorParser === Assets.fromJSON) {
                         descriptorType = 'assets'
                     }
-                    DatabaseManager.putDescriptor(descriptorType, channel, descriptor)
+                    DescriptorDBManager.put(descriptorType, descriptor)
 
                     return descriptorParser(descriptor)
                 }
@@ -257,25 +263,28 @@ exports.fetch = async function (version, launcherVersion, force = false) {
 
     let promises = []
     const application = resolvedDescriptor(version.applications)
-    let existedApplication
+    let existedDescriptor
     try {
-        existedApplication = DatabaseManager.getDescriptor('application', application.id, application.type)
+        const existedApplication = DescriptorDBManager.get('applications', application.id)
         if (existedApplication && !force) {
-            promises.push(getMeta(Application.fromJSON, application.url, application.type, token, JSON.parse(existedApplication.json)).then(m => {return m}))
+            existedDescriptor = JSON.parse(existedApplication.descriptor)
         }
     } catch (error) {
-        promises.push(getMeta(Application.fromJSON, application.url, application.type, token).then(m => {return m}))
+        logger.warn(error)
     }
+    promises.push(getMeta(Application.fromJSON, application.url, application.type, token, existedDescriptor).then(m => {return m}))
 
 
     const assets = resolvedDescriptor(version) //Change below when server will be fixed
-    let existedAssets
     try {
-        existedAssets = DatabaseManager.getDescriptor('assets', version.id, version.type)
-        promises.push(getMeta(Assets.fromJSON, version.url, version.type, token, JSON.parse(existedAssets.json)).then(m => {return m}))
+        const existedAssets = DescriptorDBManager.get('assets', version.id)
+        if (existedAssets && !force) {
+            existedDescriptor = JSON.parse(existedAssets.descriptor)
+        }
     } catch (error) {
-        promises.push(getMeta(Assets.fromJSON, version.url, version.type, token).then(m => {return m}))
+        logger.warn(error)
     }
+    promises.push(getMeta(Assets.fromJSON, version.url, version.type, token, existedDescriptor).then(m => {return m}))
 
     return await Promise.all(promises)
 }
@@ -284,9 +293,9 @@ exports.fetch = async function (version, launcherVersion, force = false) {
  * @returns {Array<Version>}
  */
 exports.versions = () => {
-    let versionsArr = DatabaseManager.getAllVersions()
+    let versionsArr = VersionsDBManager.getAll()
     for (const [i, version] of versionsArr.entries()) {
-        versionsArr[i] = Assets.fromJSON(JSON.parse(version.json))
+        versionsArr[i] = Assets.fromJSON(JSON.parse(version.descriptor))
     }
     return versionsArr
 }
@@ -295,6 +304,6 @@ exports.versions = () => {
  * @param {string} versionId
  * @returns {?Version}
  */
-exports.get = (versionId, channel = 'release') => {
-    return Assets.fromJSON(JSON.parse(DatabaseManager.getVersion(versionId, channel).json)) //add channel later
+exports.get = (versionId) => {
+    return Assets.fromJSON(JSON.parse(VersionsDBManager.get(versionId).descriptor)) //add channel later
 }

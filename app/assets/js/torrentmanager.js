@@ -8,7 +8,7 @@ const FSChunkStore = require('fs-chunk-store')
 const ConfigManager = require('./configmanager')
 const LoggerUtil = require('./loggerutil')
 const {TimeoutEmitter} = require('./helpers')
-const {DatabaseManager} = require('./databasemanager')
+const {TorrentDBManager} = require('./databasemanager')
 
 const logger = LoggerUtil('%c[TorrentManager]', 'color: #a02d2a; font-weight: bold')
 
@@ -16,11 +16,11 @@ const logger = LoggerUtil('%c[TorrentManager]', 'color: #a02d2a; font-weight: bo
 class TorrentHolder {
 
     static async add(targetPath, torrentFile) {
-        DatabaseManager.addTorrent(targetPath, torrentFile)
+        TorrentDBManager.addTorrent(targetPath, torrentFile)
     }
 
     static async getData() {
-        return DatabaseManager.getAllTorrents()
+        return TorrentDBManager.getAllTorrents()
     }
 }
 

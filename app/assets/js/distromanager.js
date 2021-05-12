@@ -594,28 +594,29 @@ exports.pullRemote = async () => {
         await fs.promises.access(distroDest)
         const stats = await fs.promises.stat(distroDest)
         customHeaders['If-Modified-Since'] = stats.mtime.toUTCString()
-        const response = await got.get(distroURL, {
-            headers: customHeaders,
-            timeout: 5000
-        })
-
-        switch (response.statusCode) {
-            case 304: {
-                return exports.pullLocal()
-            }
-            case 200: {
-                _HOLDER = DistroIndex.fromJSON(JSON.parse(response.body))
-                await fs.promises.writeFile(distroDest, response.body, 'utf-8')
-                return _HOLDER
-            }
-            default: {
-                throw new Error('Something went wrong, status code: ', response.statusCode)
-            }
-        }
     } catch (error) {
-        logger.error(error)
-        throw error
+        logger.warn(error)
     }
+
+    const response = await got.get(distroURL, {
+        headers: customHeaders,
+        timeout: 5000
+    })
+
+    switch (response.statusCode) {
+        case 304: {
+            return exports.pullLocal()
+        }
+        case 200: {
+            _HOLDER = DistroIndex.fromJSON(JSON.parse(response.body))
+            await fs.promises.writeFile(distroDest, response.body, 'utf-8')
+            return _HOLDER
+        }
+        default: {
+            throw new Error('Something went wrong, status code: ', response.statusCode)
+        }
+    }
+
 }
 
 /**

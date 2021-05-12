@@ -1,68 +1,106 @@
 const path = require('path')
 const isDev = require('./isdev')
 const Database = require('better-sqlite3')
+const fs = require('fs-extra')
+const LoggerUtil = require('./loggerutil')
 
 const sysRoot = process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
 const dbPath = path.join(sysRoot, '.nblade', 'bladelauncher.db')
-const db = isDev ? new Database(dbPath, {verbose: console.log}) : new Database(dbPath)
+const logger = LoggerUtil('%c[DatabaseManager]', 'color: #a02d2a; font-weight: bold')
 
+const init = () => {
+    try {
+        fs.mkdirsSync(path.dirname(dbPath))
+        return isDev ? new Database(dbPath, {verbose: console.log}) : new Database(dbPath)
+    } catch (error) {
+        logger.error(error)
+        fs.unlinkSync(dbPath)
+        return isDev ? new Database(dbPath, {verbose: console.log}) : new Database(dbPath)
+    }
+}
 
 class DatabaseManager {
-    static getDescriptor(type, id, channel) {
-        return db.prepare(`SELECT json FROM ${type} WHERE id = ? AND channel = ?`)
-            .get(JSON.stringify(id), JSON.stringify(channel))
+    constructor() {
+        this.db = init()
+    }
+}
+
+class DescriptorManager extends DatabaseManager {
+    constructor(db) {
+        super(db)
+        this.db.prepare('CREATE TABLE IF NOT EXISTS applications (id TEXT NOT NULL UNIQUE, descriptor json NOT NULL)').run()
+        this.db.prepare('CREATE TABLE IF NOT EXISTS assets (id TEXT NOT NULL UNIQUE, descriptor json NOT NULL)').run()
     }
 
-    static putDescriptor(descriptorType, channel, descriptor) {
-        db.prepare(`CREATE TABLE IF NOT EXISTS ${descriptorType} (id TEXT NOT NULL UNIQUE, channel TEXT NOT NULL, json TEXT NOT NULL)`).run()
-        db.prepare(`INSERT OR IGNORE INTO ${descriptorType} (id, channel, json) VALUES (?, ?, ?)`)
+    get(type, id) {
+        return this.db.prepare(`SELECT descriptor FROM ${type} WHERE id = ?`)
+            .get(JSON.stringify(id))
+    }
+
+    put(type, descriptor) {
+        this.db.prepare(`INSERT OR IGNORE INTO ${type} (id, descriptor) VALUES (?, ?)`)
             .run(
                 JSON.stringify(descriptor.id),
-                JSON.stringify(channel),
                 JSON.stringify(descriptor)
             )
     }
+}
 
-    static getAllVersions(channel = 'release') {  //remove later
-        return db.prepare('SELECT json FROM assets WHERE channel = ?')
+class VersionsManager extends DatabaseManager {
+    get(versionId) {  //remove later
+        return this.db.prepare('SELECT descriptor FROM assets WHERE id = ?')
+            .get(JSON.stringify(versionId))
+    }
+
+    getAll(channel = 'release') {  //remove later
+        return this.db.prepare("SELECT descriptor FROM assets WHERE json_extract(descriptor, '$.type') = ?")
             .all(JSON.stringify(channel))
     }
+}
 
-    static getVersion(versionId, channel = 'release') {  //remove later
-        return db.prepare('SELECT json FROM assets WHERE id = ? AND channel = ?')
-            .get(JSON.stringify(versionId), JSON.stringify(channel))
+class ConfigManager extends DatabaseManager {
+    constructor(db) {
+        super(db)
+        this.db.prepare('CREATE TABLE IF NOT EXISTS config (id INTEGER NOT NULL UNIQUE, config json NOT NULL)').run()
     }
 
-    static saveConfig(config) {
-        db.prepare('INSERT OR REPLACE INTO config (id, json) VALUES (?, ?)')
+    save(config) {
+        this.db.prepare('INSERT OR REPLACE INTO config (id, config) VALUES (?, ?)')
             .run(
                 1,
                 JSON.stringify(config),
             )
     }
 
-    static getConfig() {
-        db.prepare('CREATE TABLE IF NOT EXISTS config (id INTEGER NOT NULL UNIQUE, json TEXT NOT NULL)').run()
-        return db.prepare('SELECT json FROM config').get()
+    get() {
+        return this.db.prepare('SELECT config FROM config').get()
     }
 
-    static addTorrent(targetPath, torrentFile) {
-        db.prepare('CREATE TABLE IF NOT EXISTS torrents (path TEXT NOT NULL UNIQUE, torrentdata TEXT NOT NULL UNIQUE)').run()
-        db.prepare('INSERT OR IGNORE INTO torrents (path, torrentdata) VALUES (?, ?)')
+}
+
+class TorrentManager extends DatabaseManager {
+    constructor(db) {
+        super(db)
+        this.db.prepare('CREATE TABLE IF NOT EXISTS torrents (path TEXT NOT NULL UNIQUE, torrentdata TEXT NOT NULL UNIQUE)').run()
+    }
+
+    add(targetPath, torrentFile) {
+        this.db.prepare('INSERT OR IGNORE INTO torrents (path, torrentdata) VALUES (?, ?)')
             .run(
                 JSON.stringify(targetPath),
                 torrentFile.toString('base64')
             )
     }
 
-    static getAllTorrents() {
-        return db.prepare('SELECT * FROM torrents').all()
+    getAll() {
+        return this.db.prepare('SELECT * FROM torrents').all()
     }
-
 }
 
-
 module.exports = {
-    DatabaseManager
+    DescriptorDBManager: new DescriptorManager(),
+    VersionsDBManager: new VersionsManager(),
+    ConfigDBManager: new ConfigManager(),
+    TorrentDBManager: new TorrentManager()
 }
 

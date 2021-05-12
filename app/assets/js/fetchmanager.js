@@ -227,7 +227,6 @@ class PatchFetcher extends Fetcher {
         const url = new URL(this.url)
         const params = new URLSearchParams(url.search)
         const baseVersionId = params.get('bs')
-        const channelType = params.get('ch')
         const subURI = params.get('su')
         const diffType = params.get('dt')
         const expectedLength = Number(params.get('xl'))
@@ -246,7 +245,7 @@ class PatchFetcher extends Fetcher {
             throw new Error(`Unsupported sub uri protocol: ${subUrl.protocol}.`)
         }
 
-        const baseVersion = VersionsManager.get(baseVersionId) //Add channel when it will be ready
+        const baseVersion = VersionsManager.get(baseVersionId)
         if (!baseVersion) {
             throw new Error(`Base version not exists: ${baseVersionId}.`)
         }

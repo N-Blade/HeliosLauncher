@@ -19,15 +19,9 @@ const init = () => {
     }
 }
 
-class DatabaseManager {
-    constructor() {
-        this.db = init()
-    }
-}
-
-class ApplicationManager extends DatabaseManager {
+class ApplicationManager {
     constructor(db) {
-        super(db)
+        this.db = db
         this.db.prepare('CREATE TABLE IF NOT EXISTS applications (id TEXT NOT NULL UNIQUE, descriptor json NOT NULL)').run()
     }
 
@@ -45,9 +39,9 @@ class ApplicationManager extends DatabaseManager {
     }
 }
 
-class AssetsManager extends DatabaseManager {
+class AssetsManager {
     constructor(db) {
-        super(db)
+        this.db = db
         this.db.prepare('CREATE TABLE IF NOT EXISTS assets (id TEXT NOT NULL UNIQUE, descriptor json NOT NULL)').run()
     }
 
@@ -65,7 +59,11 @@ class AssetsManager extends DatabaseManager {
     }
 }
 
-class VersionsManager extends DatabaseManager {
+class VersionsManager {
+    constructor(db) {
+        this.db = db
+    }
+
     get(versionId) {  //remove later
         return this.db.prepare('SELECT descriptor FROM assets WHERE id = ?')
             .get(JSON.stringify(versionId))
@@ -77,9 +75,9 @@ class VersionsManager extends DatabaseManager {
     }
 }
 
-class ConfigManager extends DatabaseManager {
+class ConfigManager {
     constructor(db) {
-        super(db)
+        this.db = db
         this.db.prepare('CREATE TABLE IF NOT EXISTS config (id INTEGER NOT NULL UNIQUE, config json NOT NULL)').run()
     }
 
@@ -97,9 +95,9 @@ class ConfigManager extends DatabaseManager {
 
 }
 
-class TorrentManager extends DatabaseManager {
+class TorrentManager {
     constructor(db) {
-        super(db)
+        this.db = db
         this.db.prepare('CREATE TABLE IF NOT EXISTS torrents (path TEXT NOT NULL UNIQUE, torrentdata TEXT NOT NULL UNIQUE)').run()
     }
 
@@ -116,11 +114,12 @@ class TorrentManager extends DatabaseManager {
     }
 }
 
+const db = init()
 module.exports = {
-    ApplicationDBManager: new ApplicationManager(),
-    AssetsDBManager: new AssetsManager(),
-    VersionsDBManager: new VersionsManager(),
-    ConfigDBManager: new ConfigManager(),
-    TorrentDBManager: new TorrentManager()
+    ApplicationDBManager: new ApplicationManager(db),
+    AssetsDBManager: new AssetsManager(db),
+    VersionsDBManager: new VersionsManager(db),
+    ConfigDBManager: new ConfigManager(db),
+    TorrentDBManager: new TorrentManager(db)
 }
 

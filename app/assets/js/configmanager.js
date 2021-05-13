@@ -104,7 +104,11 @@ const DEFAULT_CONFIG = {
     selectedAccount: null,
     authenticationDatabase: {},
     modConfigurations: [],
-    fingerprint: []
+    fingerprint: [],
+    settingsFileHashes: {
+        preferencesHash: null,
+        abilityBarHash: null
+    }
 }
 
 let config = null
@@ -254,20 +258,19 @@ exports.getCrashDumpDirectory = function () {
  *
  * @returns {string} The launcher's instance directory.
  */
-exports.getInstanceDirectory = function () {
+exports.getInstanceDirectory = () => {
     return path.join(exports.getDataDirectory(), 'instances')
 }
 
-exports.getApplicationDirectory = function () {
+exports.getApplicationDirectory = () => {
     return path.join(exports.getDataDirectory(), 'applications')
 }
 
-exports.getConfigDirectory = function () {
-
+exports.getConfigDirectory = () => {
     return path.join(exports.getCommonDirectory(), 'config')
 }
 
-exports.getGameConfigPath = function () {
+exports.getGameConfigPath = () => {
     return path.join(exports.getConfigDirectory(), exports.getSelectedAccount().uuid, 'preferences.xml')
 }
 
@@ -704,4 +707,15 @@ exports.getIsBetaChannel = function () {
 exports.switchReleaseChannel = function (channel) {
     config.settings.launcher.releaseChannel = channel
     exports.save()
+}
+
+exports.setSettingsFileHashes = async (preferencesHash, abilityBarHash) => {
+    config.settingsFileHashes.preferencesHash = preferencesHash
+    config.settingsFileHashes.abilityBarHash = abilityBarHash
+    exports.save()
+}
+
+exports.getSettingsFileHashes = async () => {
+    return [config.settingsFileHashes.preferencesHash,
+    config.settingsFileHashes.abilityBarHash]
 }

@@ -263,8 +263,9 @@ exports.fetch = async function (version, launcherVersion, force = false) {
         logger.warn(error)
     }
     promises.push(getMeta(descriptor => {
+        const desc = Application.fromJSON(descriptor)
         ApplicationDBManager.put(descriptor)
-        return Application.fromJSON(descriptor)
+        return desc
     }, application.url, application.type, token, existedDescriptor))
 
 
@@ -278,8 +279,9 @@ exports.fetch = async function (version, launcherVersion, force = false) {
         logger.warn(error)
     }
     promises.push(getMeta(descriptor => {
+        const desc = Assets.fromJSON(descriptor)
         AssetsDBManager.put(descriptor)
-        return Assets.fromJSON(descriptor)
+        return desc
     }, version.url, version.type, token, existedDescriptor))
 
     return await Promise.all(promises)
@@ -301,5 +303,9 @@ exports.versions = () => {
  * @returns {?Version}
  */
 exports.get = (versionId) => {
-    return Assets.fromJSON(JSON.parse(VersionsDBManager.get(versionId).descriptor)) //add channel later
+    const version = VersionsDBManager.get(versionId)
+    if (!version) {
+        return null
+    }
+    return Assets.fromJSON(JSON.parse(version.descriptor))
 }

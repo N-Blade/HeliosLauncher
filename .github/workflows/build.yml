@@ -24,5 +24,5 @@ jobs:
         uses: samuelmeuli/action-electron-builder@v1
         with:
           github_token: ${{ secrets.github_token }}
-          args: "--win nsis-web --x64 --ia32 --publish always"
+          build_script_name: dist:win
           

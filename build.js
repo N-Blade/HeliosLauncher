@@ -19,7 +19,7 @@ builder.build({
     targets: (process.argv[2] != null && Platform[process.argv[2]] != null ? Platform[process.argv[2]] : getCurrentPlatform()).createTarget(),
     config: {
         appId: 'nblade.bladelauncher',
-        productName: 'Blade Launcher',
+        productName: 'BladeLauncher',
         artifactName: 'BladeLauncher-setup-${version}.${ext}',
         copyright: 'Copyright © 2019-2021 N-Blade LLC',
         directories: {
@@ -27,8 +27,8 @@ builder.build({
             output: 'dist'
         },
         publish: [{
-            provider: 'generic',
-            url: 'http://downloads.n-blade.ru/launcher/'
+            provider: 'github',
+            releaseType: "release",
         }],
         win: {
             icon: 'app/assets/images/SealCircle.ico',

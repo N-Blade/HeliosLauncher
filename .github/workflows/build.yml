@@ -1,6 +1,9 @@
 name: Build/release
 
-on: push
+on: 
+  push:
+      tags:
+        - '*'
 
 jobs:
   release:
@@ -25,4 +28,5 @@ jobs:
         with:
           github_token: ${{ secrets.github_token }}
           build_script_name: dist:win
+          release: true
           

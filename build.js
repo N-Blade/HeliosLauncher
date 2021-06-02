@@ -27,8 +27,7 @@ builder.build({
             output: 'dist'
         },
         publish: [{
-            provider: 'github',
-            releaseType: "release",
+            provider: 'github'
         }],
         win: {
             icon: 'app/assets/images/SealCircle.ico',

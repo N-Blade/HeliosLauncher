@@ -42,6 +42,7 @@ builder.build({
                 }
             ],
             legalTrademarks: 'N-blade',
+            sign: "./sign.js",
             signAndEditExecutable: true,
             signDlls: true,
             extraResources: [

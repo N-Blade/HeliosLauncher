@@ -1,6 +1,6 @@
 {
   "name": "bladelauncher",
-  "version": "1.0.49",
+  "version": "1.0.50",
   "productName": "Blade Launcher",
   "description": "Northern Blade Launcher",
   "author": "N-Blade LCC",
@@ -50,6 +50,7 @@
     "tar-fs": "^2.1.1",
     "webtorrent": "github:kyoto44/webtorrent#master",
     "winreg": "^1.2.4",
+    "native-reg": "^0.3.5",
     "xxhash-addon": "^1.4.0"
   },
   "devDependencies": {

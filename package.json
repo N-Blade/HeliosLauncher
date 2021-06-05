@@ -1,6 +1,6 @@
 {
   "name": "bladelauncher",
-  "version": "1.0.50",
+  "version": "1.0.51",
   "productName": "Blade Launcher",
   "description": "Northern Blade Launcher",
   "author": "N-Blade LCC",
@@ -55,11 +55,11 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^12.0.9",
-    "electron-builder": "^22.10.5",
+    "electron": "^12.0.10",
+    "electron-builder": "^22.11.5",
     "electron-rebuild": "^2.3.5",
     "electron-reloader": "^1.1.0",
-    "eslint": "^7.27.0"
+    "eslint": "^7.28.0"
   },
   "repository": {
     "type": "git",

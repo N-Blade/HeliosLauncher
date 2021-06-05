@@ -1310,7 +1310,7 @@ function populateSettingsUpdateInformation(data) {
         settingsUpdateTitle.innerHTML = Lang.queryJS('settings.tabAbout.settingsUpdateTitle')
         settingsUpdateChangelogCont.style.display = 'none'
         populateVersionInformation(remote.app.getVersion(), settingsUpdateVersionValue, settingsUpdateVersionTitle, settingsUpdateVersionCheck)
-        settingsUpdateButtonStatus('Check for Updates', false, () => {
+        settingsUpdateButtonStatus(Lang.queryJS('settings.tabAbout.settingsUpdateActionButton'), false, () => {
             if (!isDev) {
                 ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
                 settingsUpdateButtonStatus('Checking for Updates..', true)

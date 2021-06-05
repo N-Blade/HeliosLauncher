@@ -166,7 +166,8 @@
             "tabAbout": {
                 "settingsUpdateTitle": "Вы используете последнюю версию",
                 "settingsUpdateVersionTitle": "Стабильная версия",
-                "settingsUpdateVersionText": "Версия"
+                "settingsUpdateVersionText": "Версия",
+                "settingsUpdateActionButton": "Проверить наличие обновлений"
             }
         },
         "overlay": {

@@ -165,7 +165,8 @@
             "tabAbout": {
                 "settingsUpdateTitle": "You Are Running the Latest Version",
                 "settingsUpdateVersionTitle": "Stable Release",
-                "settingsUpdateVersionText": "Version"
+                "settingsUpdateVersionText": "Version",
+                "settingsUpdateActionButton": "Check for Updates"
             }
         },
         "overlay": {

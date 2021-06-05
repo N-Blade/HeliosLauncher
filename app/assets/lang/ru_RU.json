@@ -167,7 +167,8 @@
                 "settingsUpdateTitle": "Вы используете последнюю версию",
                 "settingsUpdateVersionTitle": "Стабильная версия",
                 "settingsUpdateVersionText": "Версия",
-                "settingsUpdateActionButton": "Проверить наличие обновлений"
+                "settingsUpdateActionButton": "Проверить наличие обновлений",
+                "settingsUpdateActionProgress": "Проверяем обновления..."
             }
         },
         "overlay": {

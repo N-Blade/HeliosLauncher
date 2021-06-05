@@ -1313,7 +1313,7 @@ function populateSettingsUpdateInformation(data) {
         settingsUpdateButtonStatus(Lang.queryJS('settings.tabAbout.settingsUpdateActionButton'), false, () => {
             if (!isDev) {
                 ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
-                settingsUpdateButtonStatus('Checking for Updates..', true)
+                settingsUpdateButtonStatus(Lang.queryJS('settings.tabAbout.settingsUpdateActionProgress'), true)
             }
         })
     }

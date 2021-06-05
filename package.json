@@ -1,6 +1,6 @@
 {
   "name": "bladelauncher",
-  "version": "1.0.51",
+  "version": "1.0.52",
   "productName": "Blade Launcher",
   "description": "Northern Blade Launcher",
   "author": "N-Blade LCC",
@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^12.0.10",
+    "electron": "^13.1.1",
     "electron-builder": "^22.11.5",
     "electron-rebuild": "^2.3.5",
     "electron-reloader": "^1.1.0",

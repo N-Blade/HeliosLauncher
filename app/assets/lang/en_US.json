@@ -166,7 +166,8 @@
                 "settingsUpdateTitle": "You Are Running the Latest Version",
                 "settingsUpdateVersionTitle": "Stable Release",
                 "settingsUpdateVersionText": "Version",
-                "settingsUpdateActionButton": "Check for Updates"
+                "settingsUpdateActionButton": "Check for Updates",
+                "settingsUpdateActionProgress": "Checking for Updates..."
             }
         },
         "overlay": {

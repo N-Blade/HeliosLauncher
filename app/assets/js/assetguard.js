@@ -1,6 +1,4 @@
 const async = require('async')
-const child_process = require('child_process')
-const crypto = require('crypto')
 const EventEmitter = require('events')
 const fs = require('fs-extra')
 const path = require('path')
@@ -12,6 +10,7 @@ const xml = require('fast-xml-parser')
 const _ = require('lodash')
 const {promisify} = require('util')
 const stream = require('stream')
+const runas = require('runas-redux')
 
 const reg = (process.platform === 'win32') ? require('native-reg') : null
 
@@ -343,27 +342,21 @@ class AssetGuard extends EventEmitter {
 
         function installReq(reqName, path, ...flags) {
             return new Promise((resolve, reject) => {
-                child_process.execFile(path, flags, (error, stdout, stderr) => {
-                    if (stdout) {
-                        log.info(`stdout: ${stdout}`)
-                    }
-                    if (stderr) {
-                        log.info(`stderr: ${stderr}`)
-                    }
-                    if (error) {
-                        log.error(`error: ${error.message}`)
-                        if (error.code === 3010) {
-                            //3010 means "The requested operation is successful. Changes will not be effective until the system is rebooted."
-                            log.info(`${reqName} Installation completed.`)
-                            resolve()
-                        } else {
-                            reject(error)
-                        }
-                    } else {
-                        log.info(`${reqName} Installation completed.`)
-                        resolve()
-                    }
-                })
+                const run = runas('"' + path + '"', flags, {admin: true, catchOutput: true})
+                if (run.stdout) {
+                    log.info(`stdout: ${run.stdout}`)
+                }
+                if (run.stderr) {
+                    log.info(`stderr: ${run.stderr}`)
+                }
+                if (run.exitCode > 0 && run.exitCode !== 3010) {
+                    //3010 means "The requested operation is successful. Changes will not be effective until the system is rebooted."
+                    log.error(`error: ${run.exitCode}`)
+                    reject(run.exitCode)
+                } else {
+                    log.info(`${reqName} Installation completed.`)
+                    resolve()
+                }
             })
         }
 

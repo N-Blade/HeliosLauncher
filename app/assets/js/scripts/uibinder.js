@@ -115,7 +115,7 @@ function showMainUI() {
             ipcRenderer.send('torrents', 'init')
 
             setTimeout(async () => {
-                await fingerprint
+                //await fingerprint
                 $('#loadingContainer').fadeOut(500, () => {
                     $('#loadSpinnerImage').removeClass('rotating')
                 })

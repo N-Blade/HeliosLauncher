@@ -31,7 +31,7 @@ builder.build({
         publish: [{
             provider: 'github',
             releaseType: 'release',
-            channel: 'beta',
+            channel: 'latest',
         }],
         win: {
             icon: 'app/assets/images/SealCircle.ico',

@@ -78,7 +78,7 @@
         "settingsTabHeaderTextlauncherId": "Настройки лаунчера",
         "settingsTabHeaderDesclauncherId": "Список параметров для конфигурирования лаунчера",
         "settingsBetaReleaseChannelId": "Получать нестабильные версии клиента",
-        "settingsPreReleaseHeadId": "Allow Pre-Release Updates.",
+        "settingsPreReleaseHeadId": "Получать предрелизные версии лаунчера",
         "settingsPreReleaseTextId": "Pre-Releases include new features which may have not been fully tested or integrated.<br>This will always be true if you are using a pre-release version.",
         "settingsDataDirTitle": "Расположение игровых файлов",
         "settingsChoosingFolderId": "Выбрать каталог",

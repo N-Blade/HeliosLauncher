@@ -19,6 +19,7 @@ builder.build({
     targets: (process.argv[2] != null && Platform[process.argv[2]] != null ? Platform[process.argv[2]] : getCurrentPlatform()).createTarget(),
     publish: 'always',
     config: {
+        generateUpdatesFilesForAllChannels: true,
         appId: 'nblade.bladelauncher',
         productName: 'BladeLauncher',
         artifactName: 'BladeLauncher-setup.${ext}',
@@ -29,7 +30,8 @@ builder.build({
         },
         publish: [{
             provider: 'github',
-            releaseType: "release"
+            releaseType: 'release',
+            channel: 'beta',
         }],
         win: {
             icon: 'app/assets/images/SealCircle.ico',
@@ -43,7 +45,7 @@ builder.build({
                 }
             ],
             legalTrademarks: 'N-blade',
-            sign: "./sign.js",
+            sign: './sign.js',
             signAndEditExecutable: true,
             signDlls: true,
             extraResources: [

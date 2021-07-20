@@ -1,14 +1,12 @@
 const EventEmitter = require('events')
 const got = require('got')
 const fs = require('fs-extra')
-const arch = require('arch')
 const child_process = require('child_process')
 const path = require('path')
 const ThrottleGroup = require('stream-throttle').ThrottleGroup
 const {promisify} = require('util')
 const stream = require('stream')
 
-const isDev = require('./isdev')
 const {File} = require('./assets')
 const {Util} = require('./helpers')
 const ConfigManager = require('./configmanager')
@@ -183,42 +181,6 @@ class PatchFetcher extends Fetcher {
         this.launcherVersion = launcherVersion
     }
 
-    static async getPatcherPath() {
-        let patcherPath = Array(3).fill('..')
-        if (!isDev) {
-            patcherPath = Array(5).fill('..')
-            patcherPath.push('resources')
-        }
-        patcherPath.push('tools')
-        const myArch = arch()
-        switch (process.platform) {
-            case 'win32':
-                patcherPath.push('win')
-                if (myArch === 'x64') {
-                    patcherPath.push('hpatchz64.exe')
-                } else if (myArch === 'x86') {
-                    patcherPath.push('hpatchz32.exe')
-                }
-                break
-            case 'linux':
-                patcherPath.push('linux')
-                if (myArch === 'x64') {
-                    patcherPath.push('hpatchz64')
-                } else if (myArch === 'x86') {
-                    patcherPath.push('hpatchz32')
-                }
-                break
-        }
-        const patcherFile = path.join(__dirname, ...patcherPath)
-        try {
-            await fs.promises.access(patcherFile, fs.constants.R_OK)
-        } catch (err) {
-            logger.error('Unsupported platform!', err)
-            throw err
-        }
-        return patcherFile
-    }
-
     async fetch(targetPath) {
         const url = new URL(this.url)
         const params = new URLSearchParams(url.search)
@@ -278,7 +240,7 @@ class PatchFetcher extends Fetcher {
             }
         }
 
-        const patcherPath = await PatchFetcher.getPatcherPath()
+        const patcherPath = await Util.getToolPath('patcher')
         const child = child_process.spawn(patcherPath, [
             baseAsset.targetPath, patchTargetPath, targetPath,
         ])

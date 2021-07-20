@@ -1,8 +1,11 @@
 const EventEmitter = require('events')
 const fs = require('fs-extra')
-const {XXHash128} = require('xxhash-addon');
+const util = require('util')
+const execFile = util.promisify(require('child_process').execFile)
 const crypto = require('crypto')
-
+const arch = require('arch')
+const isDev = require('./isdev')
+const path = require('path')
 
 class TimeoutEmitter extends EventEmitter {
     constructor(ms, timeoutError) {
@@ -65,12 +68,13 @@ class Util {
      * @returns {Promise} The calculated hash in hex.
      */
     static calculateHash(filepath, algo) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             let hash
             if (algo === 'sha512' || algo === 'md5') {
                 hash = crypto.createHash(algo)
             } else if (algo === 'xxh128') {
-                hash = new XXHash128()
+                resolve(await this.calculateHashXX3(filepath))
+                return
             } else {
                 reject('Unsupported hash algorithm: ' + algo)
                 return
@@ -81,6 +85,64 @@ class Util {
             stream.on('data', chunk => hash.update(chunk))
             stream.on('end', () => resolve(hash.digest().toString('hex')))
         })
+    }
+
+    static async getToolPath(toolname) {
+        let toolPath = Array(3).fill('..')
+        if (!isDev) {
+            toolPath = Array(5).fill('..')
+            toolPath.push('resources')
+        }
+        toolPath.push('tools')
+
+        const myArch = arch()
+        switch (process.platform) {
+            case 'win32':
+                toolPath.push('win')
+                switch (toolname) {
+                    case 'patcher':
+                        if (myArch === 'x64') {
+                            toolPath.push('hpatchz64.exe')
+                        } else if (myArch === 'x86') {
+                            toolPath.push('hpatchz32.exe')
+                        }
+                        break
+                    case 'hasher':
+                        toolPath.push('xxhsum.exe')
+                        break
+                }
+                break
+            case 'linux':
+                toolPath.push('linux')
+                switch (toolname) {
+                    case 'patcher':
+                        if (myArch === 'x64') {
+                            toolPath.push('hpatchz64')
+                        } else if (myArch === 'x86') {
+                            toolPath.push('hpatchz32')
+                        }
+                        break
+                    case 'hasher':
+                        toolPath.push('xxhsum')
+                        break
+                }
+        }
+
+        const toolFile = path.join(__dirname, ...toolPath)
+        try {
+            await fs.promises.access(toolFile, fs.constants.R_OK)
+        } catch (err) {
+            console.error('Unsupported platform!', err)
+            throw err
+        }
+        return toolFile
+    }
+
+    static async calculateHashXX3(filepath) {
+        console.time(filepath)
+        const {stdout} = await execFile(await this.getToolPath('hasher'), ['-H2', filepath])
+        console.timeEnd(filepath)
+        return stdout.slice(0, 32)
     }
 
     /**

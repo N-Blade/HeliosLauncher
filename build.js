@@ -30,7 +30,7 @@ builder.build({
         },
         publish: [{
             provider: 'github',
-            releaseType: 'release',
+            releaseType: 'prerelease',
         }],
         win: {
             icon: 'app/assets/images/SealCircle.ico',

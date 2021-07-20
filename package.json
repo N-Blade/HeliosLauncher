@@ -1,6 +1,6 @@
 {
   "name": "bladelauncher",
-  "version": "1.0.57",
+  "version": "1.0.58-pre.1",
   "productName": "Blade Launcher",
   "description": "Northern Blade Launcher",
   "author": "N-Blade LCC",
@@ -48,7 +48,7 @@
     "runas-redux": "^4.0.1",
     "semver": "^7.3.5",
     "stream-throttle": "^0.1.3",
-    "systeminformation": "^5.7.7",
+    "systeminformation": "^5.7.8",
     "tar-fs": "^2.1.1",
     "webtorrent": "github:kyoto44/webtorrent#master",
     "winreg": "^1.2.4",
@@ -56,11 +56,11 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^13.1.5",
+    "electron": "^13.1.7",
     "electron-builder": "^22.11.7",
     "electron-rebuild": "^2.3.5",
     "electron-reloader": "^1.1.0",
-    "eslint": "^7.29.0"
+    "eslint": "^7.31.0"
   },
   "repository": {
     "type": "git",

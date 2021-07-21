@@ -170,22 +170,27 @@ class AssetGuard extends EventEmitter {
     }
 
     async syncSettings(assetsMeta) {
-        const preferencesPath = ConfigManager.getGameConfigPath()
-        const abilityBarSettingsPath = path.join(ConfigManager.getInstanceDirectory(), assetsMeta.id, 'ability_bar_settings.xml')
-
-        const [oldPreferencesHash, oldAbilityBarHash] = await ConfigManager.getSettingsFileHashes()
-        let preferencesHash, abilityBarHash
-        try {
-            preferencesHash = await Util.calculateHash(preferencesPath, 'xxh128')
-            abilityBarHash = await Util.calculateHash(abilityBarSettingsPath, 'xxh128')
-            if (oldPreferencesHash === preferencesHash && oldAbilityBarHash === abilityBarHash) {
-                return
+        const fetchSettings = async () => {
+            try {
+                const response = await got.get(`${this.syncURI}/get`, {
+                    headers: {
+                        'userid': ConfigManager.getSelectedAccount().uuid,
+                        'User-Agent': `BladeLauncher/${this.launcherVersion}`,
+                        'Authorization': `Bearer ${ConfigManager.getSelectedAccount().accessToken}`
+                    },
+                    retry: {
+                        limit: 3
+                    }
+                })
+                const res = JSON.parse(response.body)
+                await fs.promises.writeFile(preferencesPath, res.preferences)
+                await fs.promises.writeFile(abilityBarSettingsPath, res.abilityBar)
+            } catch (error) {
+                log.error(error)
             }
-        } catch (error) {
-            log.warn('Some files are not exists', error)
         }
 
-        if (preferencesHash && abilityBarHash) {
+        const postSettings = async () => {
             try {
                 const preferences = await fs.promises.readFile(preferencesPath, 'ascii')
                 const abilityBar = await fs.promises.readFile(abilityBarSettingsPath, 'ascii')
@@ -205,22 +210,31 @@ class AssetGuard extends EventEmitter {
             } catch (error) {
                 log.error(error)
             }
-        } else {
-            try {
-                const response = await got.get(`${this.syncURI}/get`, {
-                    headers: {
-                        'userid': ConfigManager.getSelectedAccount().uuid,
-                        'User-Agent': `BladeLauncher/${this.launcherVersion}`,
-                        'Authorization': `Bearer ${ConfigManager.getSelectedAccount().accessToken}`
-                    }
-                })
-                const res = JSON.parse(response.body)
-                await fs.promises.writeFile(preferencesPath, res.preferences)
-                await fs.promises.writeFile(abilityBarSettingsPath, res.abilityBar)
-            } catch (error) {
-                log.error(error)
-            }
         }
+
+        const preferencesPath = ConfigManager.getGameConfigPath()
+        const abilityBarSettingsPath = path.join(ConfigManager.getInstanceDirectory(), assetsMeta.id, 'ability_bar_settings.xml')
+        let preferencesHash, abilityBarHash
+
+        await fs.promises.access(preferencesPath, fs.constants.R_OK).then(async () => {
+            preferencesHash = await Util.calculateHash(preferencesPath, 'xxh128')
+        }).catch(err => {
+            log.warn(err, 'no preferences file exist')
+        })
+
+        await fs.promises.access(abilityBarSettingsPath, fs.constants.R_OK).then(async () => {
+            abilityBarHash = await Util.calculateHash(abilityBarSettingsPath, 'xxh128')
+        }).catch(err => {
+            log.warn(err, 'no ability bar file exist')
+        })
+
+        const [oldPreferencesHash, oldAbilityBarHash] = await ConfigManager.getSettingsFileHashes()
+
+        if (oldPreferencesHash === preferencesHash && oldAbilityBarHash === abilityBarHash) {
+            return
+        }
+
+        preferencesHash && abilityBarHash ? await postSettings() : await fetchSettings()
     }
 
     async validateRequirements() {
@@ -605,7 +619,9 @@ class AssetGuard extends EventEmitter {
             //await this._stopAllTorrents()
 
             this.emit('validate', 'version')
+            console.time('Version validation time')
             await this.validateVersion([applicationMeta, assetsMeta])
+            console.timeEnd('Version validation time')
             this.emit('validate', 'libraries')
             await this.validateModifiers(applicationMeta)
             this.torrentsProxy.setMaxListeners(_([applicationMeta, assetsMeta]).map('downloads').map(_.size).sum(_.values))

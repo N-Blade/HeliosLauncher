@@ -99,8 +99,7 @@ class DumpsReporter {
         if (isDev) {
             return
         }
-        const dumpsDirectory = ConfigManager.getCrashDumpDirectory()
-        const filesList = flatten(dirTree(dumpsDirectory, {extensions: /\.dmp/}))
+        const filesList = flatten(dirTree(ConfigManager.getApplicationDirectory(), {extensions: /\.dmp/}))
         return await sendReport(filesList, 'dumps', 'crash', '[crush_dumps]')
     }
 }

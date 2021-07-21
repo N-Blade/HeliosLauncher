@@ -611,7 +611,6 @@ class AssetGuard extends EventEmitter {
             const parallelTasks = []
             if (process.platform === 'win32') {  // Install requirements/create rule/send dumps only for windows
                 parallelTasks.push(
-                    DumpsManager.createRules('nblade.exe').catch(console.warn),
                     DumpsReporter.report().catch(console.warn),
                     this.validateRequirements()
                 )

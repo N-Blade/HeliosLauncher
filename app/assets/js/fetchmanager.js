@@ -1,5 +1,5 @@
 const EventEmitter = require('events')
-const got = require('got')
+const gotResume = require('got-resume')
 const fs = require('fs-extra')
 const child_process = require('child_process')
 const path = require('path')
@@ -92,7 +92,7 @@ class HttpFetcher extends Fetcher {
             })
             .on('finish', () => logger.info(`${path.basename(targetPath)} was downloaded successfully`))
 
-        const downloadStream = got.stream(this.url, {
+        const downloadStream = gotResume(this.url, {
             headers: {
                 'User-Agent': 'BladeLauncher/' + this.launcherVersion,
                 'Accept': '*/*',

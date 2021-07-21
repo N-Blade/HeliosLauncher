@@ -645,7 +645,10 @@ exports.pullRemote = async () => {
 
     const response = await got.get(distroURL, {
         headers: customHeaders,
-        timeout: 5000
+        timeout: 5000,
+        retry: {
+            limit: 3
+        }
     })
 
     switch (response.statusCode) {

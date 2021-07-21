@@ -139,9 +139,7 @@ class Util {
     }
 
     static async calculateHashXX3(filepath) {
-        console.time(filepath)
         const {stdout} = await execFile(await this.getToolPath('hasher'), ['-H2', filepath])
-        console.timeEnd(filepath)
         return stdout.slice(0, 32)
     }
 

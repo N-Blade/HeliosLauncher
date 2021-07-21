@@ -216,7 +216,10 @@ exports.fetch = async function (version, launcherVersion, force = false) {
         logger.info(`Fetching descriptor '${url}' metadata.`)
         const response = await got.get(url, {
             headers: customHeaders,
-            timeout: 5000
+            timeout: 5000,
+            retry: {
+                limit: 3
+            }
         })
         switch (response.statusCode) {
             case 304: {

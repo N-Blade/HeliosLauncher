@@ -11,6 +11,7 @@ const _ = require('lodash')
 const {promisify} = require('util')
 const stream = require('stream')
 const runas = require('runas-redux')
+const {performance} = require('perf_hooks')
 
 const reg = (process.platform === 'win32') ? require('native-reg') : null
 
@@ -619,9 +620,10 @@ class AssetGuard extends EventEmitter {
             //await this._stopAllTorrents()
 
             this.emit('validate', 'version')
-            console.time('Version validation time')
+            const validationStart = performance.now()
             await this.validateVersion([applicationMeta, assetsMeta])
-            console.timeEnd('Version validation time')
+            const validationEnd = performance.now()
+            log.info(`Version validation time: ${((validationEnd - validationStart) / 1000).toFixed(3)} sec`)
             this.emit('validate', 'libraries')
             await this.validateModifiers(applicationMeta)
             this.torrentsProxy.setMaxListeners(_([applicationMeta, assetsMeta]).map('downloads').map(_.size).sum(_.values))

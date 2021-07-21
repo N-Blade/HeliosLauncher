@@ -17,7 +17,6 @@ const reg = (process.platform === 'win32') ? require('native-reg') : null
 
 const ConfigManager = require('./configmanager')
 const DistroManager = require('./distromanager')
-const DumpsManager = require('./dumpsmanager')
 const FetchManager = require('./fetchmanager')
 const VersionManager = require('./versionsmanager')
 const {DumpsReporter} = require('./reportmanager')

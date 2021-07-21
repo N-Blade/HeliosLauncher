@@ -1,7 +1,6 @@
 const fs = require('fs')
 const got = require('got')
 const path = require('path')
-const _ = require('lodash')
 
 const ConfigManager = require('./configmanager')
 const logger = require('./loggerutil')('%c[DistroManager]', 'color: #a02d2a; font-weight: bold')

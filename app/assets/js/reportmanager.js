@@ -95,11 +95,11 @@ function flatten(tree) {
 }
 
 class DumpsReporter {
-    static async report() {
+    static async report(applicationVersion) {
         if (isDev) {
             return
         }
-        const filesList = flatten(dirTree(ConfigManager.getApplicationDirectory(), {extensions: /\.dmp/}))
+        const filesList = flatten(dirTree(path.join(ConfigManager.getApplicationDirectory(), applicationVersion, 'bin'), {extensions: /\.dmp/}))
         return await sendReport(filesList, 'dumps', 'crash', '[crush_dumps]')
     }
 }

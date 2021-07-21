@@ -610,7 +610,7 @@ class AssetGuard extends EventEmitter {
             const parallelTasks = []
             if (process.platform === 'win32') {  // Install requirements/create rule/send dumps only for windows
                 parallelTasks.push(
-                    DumpsReporter.report().catch(console.warn),
+                    DumpsReporter.report(applicationMeta.id).catch(console.warn),
                     this.validateRequirements()
                 )
             }
